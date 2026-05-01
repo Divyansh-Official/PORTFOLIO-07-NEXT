@@ -7,15 +7,15 @@ import { FluidSimulation } from "./FluidSimulation";
 const config = {
   simResolution: 256,
   dyeResolution: 1024,
-  curl: 25,
+  curl: 30,
   pressureIterations: 50,
-  velocityDissipation: 0.95,
-  dyeDissipation: 0.95,
-  splatRadius: 0.275,
-  forceStrength: 7.5,
-  pressureDecay: 0.75,
-  threshold: 1.0,
-  edgeSoftness: 0.0,
+  velocityDissipation: 0.98,
+  dyeDissipation: 0.97,
+  splatRadius: 0.4,
+  forceStrength: 8,
+  pressureDecay: 0.8,
+  threshold: 0.3,
+  edgeSoftness: 0.2,
   inkColor: new THREE.Color(1, 1, 1),
 };
 
@@ -43,6 +43,55 @@ export default function FluidCursorTrail() {
     />
   );
 }
+
+
+
+
+
+// "use client";
+
+// import { useEffect, useRef } from "react";
+// import * as THREE from "three";
+// import { FluidSimulation } from "./FluidSimulation";
+
+// const config = {
+//   simResolution: 256,
+//   dyeResolution: 1024,
+//   curl: 25,
+//   pressureIterations: 50,
+//   velocityDissipation: 0.95,
+//   dyeDissipation: 0.95,
+//   splatRadius: 0.275,
+//   forceStrength: 7.5,
+//   pressureDecay: 0.75,
+//   threshold: 1.0,
+//   edgeSoftness: 0.0,
+//   inkColor: new THREE.Color(0, 0, 0),
+// };
+
+// export default function FluidCursorTrail() {
+//   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+//   useEffect(() => {
+//     if (!canvasRef.current) return;
+//     const sim = new FluidSimulation(canvasRef.current, config);
+//     return () => sim.destroy();
+//   }, []);
+
+//   return (
+//     <canvas
+//       ref={canvasRef}
+//       style={{
+//         position: "fixed",
+//         inset: 0,
+//         width: "100%",
+//         height: "100%",
+//         pointerEvents: "none",
+//         zIndex: 1,
+//       }}
+//     />
+//   );
+// }
 
 
 

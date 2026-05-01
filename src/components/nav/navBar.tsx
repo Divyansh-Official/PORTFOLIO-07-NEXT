@@ -19,7 +19,15 @@ export default function BasicNavigationBar() {
         `}
       </style>
 
-        <nav className="w-full top-0 left-0 p-5 flex justify-between gap-10 z-[2]">
+        <nav className="w-full top-0 left-0 p-5 flex justify-between gap-10 z-[2]" style={{position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100%",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: "2.5rem",
+          padding: "1.25rem",}}>
           <div className="nav-logo"> <a href=""> {info.name} </a> </div>
 
           <div className="nav-links flex gap-4">
