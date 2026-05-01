@@ -5,6 +5,20 @@ import icon from "../../data/icons.json";
 export default function BasicNavigationBar() {
   return (
     <div className="">
+
+      <style>
+        {`
+
+        @media (max-width: 1000px) {
+          .nav-links {
+          flex-direction: column;
+          gap: 0;
+          align-items: flex-end; } 
+          }
+        
+        `}
+      </style>
+
         <nav className="w-full top-0 left-0 p-5 flex justify-between gap-10 z-[2]">
           <div className="nav-logo"> <a href=""> {info.name} </a> </div>
 
