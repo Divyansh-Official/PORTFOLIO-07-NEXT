@@ -17,7 +17,7 @@ export default function Hero() {
         h1 {
           font-family: "Inter", sans-serif;
           text-transform: uppercase;
-          font-size: clamp(3rem, 20vw, 15rem);
+          font-size: clamp(5rem, 18vw, 15rem);
           line-height: 0.9;
           letter-spacing: -0.04em;
           font-weight: 900;
@@ -26,7 +26,7 @@ export default function Hero() {
         .hero {
           width: 100%;
           height: 100svh;
-          padding: 2rem;
+          // padding: 2rem;
           // background-color: #ffffff;
           display: flex;
           flex-direction: column;

@@ -458,7 +458,7 @@ export default function SplashScreen() {
           position: relative;
           width: 100%;
           height: 100svh;
-          padding: 1.5rem;
+          // padding: 1.5rem;
           background-color: var(--base-300);
           color: var(--base-100);
           display: flex;
