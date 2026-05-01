@@ -1,0 +1,15 @@
+{
+    "name": "Divyansh Tiwari",
+    "img": "https://media.licdn.com/dms/image/v2/D5603AQH06YOVuO862w/profile-displayphoto-scale_400_400/B56Z0lsNiYJwAg-/0/1774453872658?e=1779321600&v=beta&t=5YyUVXVpYcgfhALx_2qi3vmtqb85iJFixlkUaBcw2nc",
+    "role": "Software Engineer",
+    "location": "Chandigarh, India",
+    "headline": "Native App Developer | Databases [ MySQL, MongoDB, SQLite] | Spring Boot | Gradle | Rest API | Git | Firebase",
+
+    "creativeFirstName": "ディヴヤンシュ",
+    "creativeLastName": "ティワリ",
+    "creativeRole": "ソフトウェアエンジニア",
+    "creativeLocationCity": "チャンディーガル",
+    "creativeLocationState": "パンジャブ",
+    "creativeFieldsTop": "アプリとウェブ",
+    "creativeFieldsBottom": "開発者"
+}
