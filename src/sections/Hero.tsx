@@ -17,19 +17,18 @@ export default function Hero() {
         h1 {
           font-family: "Inter", sans-serif;
           text-transform: uppercase;
-          // font-size: clamp(5rem, 18vw, 15rem);
           font-size: clamp(5rem, 18vw, 15rem);
           line-height: 1;
-          // letter-spacing: -0.04em;
           font-weight: 900;
           justify-self: center;
+          color: #ffffff;
+          position: relative;
+          z-index: 0;
         }
 
         .hero {
           width: 100%;
           height: 100svh;
-          // padding: 2rem;
-          // background-color: #ffffff;
           display: flex;
           flex-direction: column;
           justify-content: center;
@@ -38,6 +37,22 @@ export default function Hero() {
         .hero .header {
           display: flex;
           flex-direction: column;
+          position: relative;
+          background: #000000;
+          width: 100%;
+          height: 100%;
+          justify-content: center;
+        }
+
+        .hero .header video {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          mix-blend-mode: multiply;
+          z-index: 1;
         }
 
         .hero h1:nth-child(2) { align-self: flex-end; }
@@ -52,21 +67,95 @@ export default function Hero() {
       `}
       </style>
 
-      {/* <BasicNavigationBar /> */}
+      <BasicNavigationBar />
 
       <div className="header">
-        <video>
-          <source src="/videos/hero_text_bg.mp4" type="video/mp4" />
-        </video>
         <h1>{info.creativeSlogan01}</h1>
         <h1>{info.creativeSlogan02}</h1>
         <h1>{info.creativeSlogan03}</h1>
+        <video autoPlay muted loop playsInline>
+          <source src="/videos/hero_text_bg.mp4" type="video/mp4" />
+        </video>
       </div>
 
       <FluidCursorTrail />
     </section>
   );
 }
+
+
+
+
+
+// import FluidCursorTrail from "../components/cursor/fluidCursor/FluidCursorTrail";
+// import BasicNavigationBar from "../components/nav/navBar";
+// import info from "../data/information.json";
+
+// export default function Hero() {
+//   return (
+//     <section className="hero">
+//       <style>{`
+//         @import url("https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap");
+
+//         *, *::before, *::after {
+//           padding: 0;
+//           margin: 0;
+//           box-sizing: border-box;
+//         }
+
+//         h1 {
+//           font-family: "Inter", sans-serif;
+//           text-transform: uppercase;
+//           // font-size: clamp(5rem, 18vw, 15rem);
+//           font-size: clamp(5rem, 18vw, 15rem);
+//           line-height: 1;
+//           // letter-spacing: -0.04em;
+//           font-weight: 900;
+//           justify-self: center;
+//         }
+
+//         .hero {
+//           width: 100%;
+//           height: 100svh;
+//           // padding: 2rem;
+//           // background-color: #ffffff;
+//           display: flex;
+//           flex-direction: column;
+//           justify-content: center;
+//         }
+
+//         .hero .header {
+//           display: flex;
+//           flex-direction: column;
+//         }
+
+//         .hero h1:nth-child(2) { align-self: flex-end; }
+//         .hero h1:nth-child(3) { align-self: center; }
+
+//         @media (max-width: 1000px) {
+//           .hero h1 {
+//             text-align: center;
+//             align-self: center !important;
+//           }
+//         }
+//       `}
+//       </style>
+
+//       {/* <BasicNavigationBar /> */}
+
+//       <div className="header">
+//         <video>
+//           <source src="/videos/hero_text_bg.mp4" type="video/mp4" />
+//         </video>
+//         <h1>{info.creativeSlogan01}</h1>
+//         <h1>{info.creativeSlogan02}</h1>
+//         <h1>{info.creativeSlogan03}</h1>
+//       </div>
+
+//       <FluidCursorTrail />
+//     </section>
+//   );
+// }
 
 
 

@@ -86,7 +86,7 @@ export default function PositionTracker() {
         }
 
         .pos-hud-row strong {
-          color: #000;
+          color: #fff;
         }
 
         [data-dir]::before     { content: attr(data-dir); }
