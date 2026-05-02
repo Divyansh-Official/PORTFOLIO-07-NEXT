@@ -590,8 +590,8 @@ export default function SplashScreen() {
         </div>
 
         {/* ── Central interactive button ──────────────────────────────────────
-            Contains: Deadpool Lottie logo, two state labels ("ENGAGE" /
-            "INITIALIZATION COMPLETED"), and the two SVG circular progress rings.
+            Contains: Deadpool Lottie logo, two state labels ("CLICK TO ENGAGE" /
+            "INITIALIZED"), and the two SVG circular progress rings.
             GSAP targets this entire container for scale + click handling. */}
         <div className="preloader-btn-container">
 
@@ -601,11 +601,11 @@ export default function SplashScreen() {
           loop={true}
           autoplay={true} />
 
-          {/* "ENGAGE" — call-to-action label, slides in at end of intro timeline */}
-          <p id="pbc-label"> ENGAGE </p>
+          {/* "CLICK TO ENGAGE" — call-to-action label, slides in at end of intro timeline */}
+          <p id="pbc-label"> CLICK TO ENGAGE </p>
 
-          {/* "INITIALIZATION COMPLETED" — swaps in during exit sequence */}
-          <p id="pbc-outro-label"> INITIALIZATION COMPLETED </p>
+          {/* "INITIALIZED" — swaps in during exit sequence */}
+          <p id="pbc-outro-label"> INITIALIZED </p>
 
           {/* SVG ring container — rotated + drawn in by introTl */}
           <div className="pbc-svg-strokes">

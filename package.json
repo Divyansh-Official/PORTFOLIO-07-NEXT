@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@fiddle-digital/string-tune": "^1.2.0",
     "@studio-freight/lenis": "^1.0.42",
     "gsap": "^3.15.0",
     "lottie-react": "^2.4.1",

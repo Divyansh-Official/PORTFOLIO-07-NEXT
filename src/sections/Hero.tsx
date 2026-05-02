@@ -17,10 +17,12 @@ export default function Hero() {
         h1 {
           font-family: "Inter", sans-serif;
           text-transform: uppercase;
+          // font-size: clamp(5rem, 18vw, 15rem);
           font-size: clamp(5rem, 18vw, 15rem);
-          line-height: 0.9;
-          letter-spacing: -0.04em;
+          line-height: 1;
+          // letter-spacing: -0.04em;
           font-weight: 900;
+          justify-self: center;
         }
 
         .hero {
@@ -50,9 +52,12 @@ export default function Hero() {
       `}
       </style>
 
-      <BasicNavigationBar />
+      {/* <BasicNavigationBar /> */}
 
       <div className="header">
+        <video>
+          <source src="/videos/hero_text_bg.mp4" type="video/mp4" />
+        </video>
         <h1>{info.creativeSlogan01}</h1>
         <h1>{info.creativeSlogan02}</h1>
         <h1>{info.creativeSlogan03}</h1>
