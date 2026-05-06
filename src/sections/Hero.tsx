@@ -5,6 +5,7 @@ import info from "../data/information.json";
 import Qualification from "./Qualification";
 import { useRef } from "react";
 import { useHeroAnimation } from "../hooks/useHeroAnimation";   
+import StringProgressReveal from "../components/StringProgressReveal";
 
 export default function Hero() {
 
@@ -25,7 +26,7 @@ export default function Hero() {
         :root {
           --base-100: #ebf5df;
           --base-200: #fec81d;
-          --base-300: #0f0f0f;
+          --base-300: #000;
         }
 
         * {
@@ -139,7 +140,7 @@ export default function Hero() {
       <canvas className="hero-canvas" ref={canvasRef}></canvas>
 
       <div className="hero-content" ref={contentRef as React.RefObject<HTMLDivElement>}>
-        <h2>{info.role}</h2>
+        <h2> {info.role} </h2>
       </div>
 
       {/* <section className="qualification">

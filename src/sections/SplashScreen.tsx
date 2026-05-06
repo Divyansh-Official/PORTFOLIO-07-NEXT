@@ -8,6 +8,7 @@ import server from "../lottieFiles/Server.json";
 import wifi from "../lottieFiles/Wifi.json";
 import deadpool from "../lottieFiles/Deadpool.json";
 import Lottie from "lottie-react";
+import StackedSections from "./StackedSections";
 
 // ─── GSAP + Plugins ──────────────────────────────────────────────────────────
 // SplitText splits text nodes into animatable word/line spans.
@@ -271,11 +272,24 @@ export default function SplashScreen() {
         )
 
         // Step 6 ── hero scales from 0.75 (set in CSS) back to full size
-        .to(".hero", {
-          scale:    1,
-          duration: 1.25,
-          ease:     "hop",
-        })
+        // .to(".hero", {
+        //   scale:    1,
+        //   duration: 1.25,
+        //   ease:     "hop",
+        // })
+        .to(".hero-stage", {
+  scale:    1,
+  duration: 1.25,
+  ease:     "hop",
+  onComplete: () => {
+    const stage = document.querySelector(".hero-stage") as HTMLElement;
+    if (stage) {
+      stage.style.position = "relative"; // release from fixed
+      stage.style.overflow = "visible";  // let sections scroll freely
+      stage.style.height   = "auto";
+    }
+  },
+})
 
         // Step 7 ── headline words cascade up from behind their word-masks
         .to(
@@ -454,21 +468,21 @@ export default function SplashScreen() {
           will-change: transform;
           }
 
-          .hero {
-          position: relative;
-          width: 100%;
-          height: 100svh;
-          // padding: 1.5rem;
-          background-color: var(--base-300);
-          color: var(--base-100);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          text-align: center;
-          transform: scale(0.75);
-          will-change: transform;
-          z-index: 1;
-          }
+          // .hero {
+          // position: relative;
+          // width: 100%;
+          // height: 100svh;
+          // // padding: 1.5rem;
+          // background-color: var(--base-300);
+          // color: var(--base-100);
+          // display: flex;
+          // align-items: center;
+          // justify-content: center;
+          // text-align: center;
+          // transform: scale(0.75);
+          // will-change: transform;
+          // z-index: 1;
+          // }
 
           .hero .preloader-revealer {
           position: absolute;
@@ -623,7 +637,8 @@ export default function SplashScreen() {
           Starts scaled to 0.75 (set in CSS). The preloader-revealer child acts
           as a white clipping mask that wipes away simultaneously with the
           preloader panel during the exit sequence. */}
-      <section className="hero z-1"> <Hero /> </section>
+      {/* <section className="hero z-1"> <Hero /> </section> */}
+      <div className="hero-stage"> <StackedSections /> </div>
 
     </div>
   );
