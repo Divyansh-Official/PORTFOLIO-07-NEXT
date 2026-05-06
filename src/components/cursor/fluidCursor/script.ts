@@ -16,4 +16,4 @@ const config = {
   inkColor: new THREE.Color(1, 1, 1),
 };
 
-new FluidSimulation(document.getElementById("fluid"), config);
+new FluidSimulation(document.getElementById("fluid") as HTMLCanvasElement, config);

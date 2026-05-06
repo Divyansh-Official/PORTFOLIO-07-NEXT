@@ -1,368 +1,152 @@
+// import HeroSectionCard from "../components/card/HeroSectionCard";
 import FluidCursorTrail from "../components/cursor/fluidCursor/FluidCursorTrail";
 import BasicNavigationBar from "../components/nav/navBar";
 import info from "../data/information.json";
+import Qualification from "./Qualification";
+import { useRef } from "react";
+import { useHeroAnimation } from "../hooks/useHeroAnimation";   
 
 export default function Hero() {
-  return (
-    <section className="hero">
-      <style>{`
-        @import url("https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap");
 
-        *, *::before, *::after {
-          padding: 0;
+  const heroRef    = useRef<HTMLElement>(null);
+  const canvasRef  = useRef<HTMLCanvasElement>(null);
+  const contentRef = useRef<HTMLElement>(null);
+
+  useHeroAnimation(heroRef, canvasRef, contentRef);
+
+  return (
+    <section className="hero" ref={heroRef}>
+
+      <style>
+        {`
+
+        @import url("https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..700;1,400..700&family=Instrument+Serif:ital@0;1&display=swap");
+
+        :root {
+          --base-100: #ebf5df;
+          --base-200: #fec81d;
+          --base-300: #0f0f0f;
+        }
+
+        * {
           margin: 0;
+          padding: 0;
           box-sizing: border-box;
         }
 
-        h1 {
-          font-family: "Inter", sans-serif;
+        img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+
+        h1,
+        h2 {
           text-transform: uppercase;
-          font-size: clamp(5rem, 18vw, 15rem);
-          line-height: 1;
-          font-weight: 900;
-          justify-self: center;
-          color: #ffffff;
-          position: relative;
-          z-index: 0;
+          font-family: "Instrument Serif", sans-serif;
+          font-weight: 500;
+          line-height: 0.9;
+        }
+
+        h1 {
+          font-size: clamp(4rem, 7.5vw, 10rem);
+        }
+
+        h2 {
+          font-size: clamp(2.5rem, 4.5vw, 5rem);
+        }
+
+        p {
+          font-family: "Instrument Sans", sans-serif;
+          font-size: 1.125rem;
+          font-weight: 400;
         }
 
         .hero {
+          position: relative;
+          width: 100%;
+          height: 175svh;
+          color: var(--base-200);
+          overflow: hidden;
+        }
+
+        .hero-img {
+          width: 100%;
+          height: 100%;
+          position: absolute;
+        }
+
+        .hero-header {
+          position: absolute;
           width: 100%;
           height: 100svh;
           display: flex;
           flex-direction: column;
           justify-content: center;
+          align-items: center;
+          gap: 0.5rem;
+          text-align: center;
         }
 
-        .hero .header {
-          display: flex;
-          flex-direction: column;
-          position: relative;
-          background: #000000;
-          width: 100%;
-          height: 100%;
-          justify-content: center;
+        .hero-header p {
+          width: 75%;
         }
 
-        .hero .header video {
+        .hero-canvas {
           position: absolute;
-          top: 0;
-          left: 0;
+          bottom: 0;
           width: 100%;
           height: 100%;
-          object-fit: cover;
-          mix-blend-mode: multiply;
-          z-index: 1;
+          pointer-events: none;
         }
 
-        .hero h1:nth-child(2) { align-self: flex-end; }
-        .hero h1:nth-child(3) { align-self: center; }
-
-        @media (max-width: 1000px) {
-          .hero h1 {
-            text-align: center;
-            align-self: center !important;
-          }
+        .hero-content {
+          position: absolute;
+          bottom: 0;
+          width: 100%;
+          height: 125svh;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          text-align: center;
         }
-      `}
+
+        .hero-content h2 {
+         width: 75%;
+         color: var(--base-300);
+        }
+
+         @media (max-width: 1000px) {
+         .hero-content h2 {
+           width: calc(100% - 4rem);
+         }
+        }
+
+        `}
       </style>
 
       <BasicNavigationBar />
 
-      <div className="header">
-        <h1>{info.creativeSlogan01}</h1>
-        <h1>{info.creativeSlogan02}</h1>
-        <h1>{info.creativeSlogan03}</h1>
-        <video autoPlay muted loop playsInline>
-          <source src="/videos/hero_text_bg.mp4" type="video/mp4" />
-        </video>
+      <div className="hero-img">
+        <img src="/images/spiderman.jpg" alt="Hero Image" />
       </div>
 
-      <FluidCursorTrail />
+      <div className="hero-header">
+        <h1> {info.creativeFirstName} {info.creativeLastName} </h1>
+        <p> {info.headline} </p>
+      </div>
+
+      <canvas className="hero-canvas" ref={canvasRef}></canvas>
+
+      <div className="hero-content" ref={contentRef as React.RefObject<HTMLDivElement>}>
+        <h2>{info.role}</h2>
+      </div>
+
+      {/* <section className="qualification">
+        <Qualification />
+      </section> */}
+
+      {/* <FluidCursorTrail /> */}
     </section>
   );
 }
-
-
-
-
-
-// import FluidCursorTrail from "../components/cursor/fluidCursor/FluidCursorTrail";
-// import BasicNavigationBar from "../components/nav/navBar";
-// import info from "../data/information.json";
-
-// export default function Hero() {
-//   return (
-//     <section className="hero">
-//       <style>{`
-//         @import url("https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap");
-
-//         *, *::before, *::after {
-//           padding: 0;
-//           margin: 0;
-//           box-sizing: border-box;
-//         }
-
-//         h1 {
-//           font-family: "Inter", sans-serif;
-//           text-transform: uppercase;
-//           // font-size: clamp(5rem, 18vw, 15rem);
-//           font-size: clamp(5rem, 18vw, 15rem);
-//           line-height: 1;
-//           // letter-spacing: -0.04em;
-//           font-weight: 900;
-//           justify-self: center;
-//         }
-
-//         .hero {
-//           width: 100%;
-//           height: 100svh;
-//           // padding: 2rem;
-//           // background-color: #ffffff;
-//           display: flex;
-//           flex-direction: column;
-//           justify-content: center;
-//         }
-
-//         .hero .header {
-//           display: flex;
-//           flex-direction: column;
-//         }
-
-//         .hero h1:nth-child(2) { align-self: flex-end; }
-//         .hero h1:nth-child(3) { align-self: center; }
-
-//         @media (max-width: 1000px) {
-//           .hero h1 {
-//             text-align: center;
-//             align-self: center !important;
-//           }
-//         }
-//       `}
-//       </style>
-
-//       {/* <BasicNavigationBar /> */}
-
-//       <div className="header">
-//         <video>
-//           <source src="/videos/hero_text_bg.mp4" type="video/mp4" />
-//         </video>
-//         <h1>{info.creativeSlogan01}</h1>
-//         <h1>{info.creativeSlogan02}</h1>
-//         <h1>{info.creativeSlogan03}</h1>
-//       </div>
-
-//       <FluidCursorTrail />
-//     </section>
-//   );
-// }
-
-
-
-
-
-// import FluidCursorTrail from "../components/cursor/fluidCursor/FluidCursorTrail";
-// import info from "../data/information.json";
-
-// export default function Hero() {
-//   return (
-//     <section className="hero">
-//       <style>{`
-//         @import url("https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap");
-
-//         *, *::before, *::after {
-//           padding: 0;
-//           margin: 0;
-//           box-sizing: border-box;
-//         }
-
-//         h1 {
-//           font-family: "Inter", sans-serif;
-//           text-transform: uppercase;
-//           font-size: clamp(3rem, 10vw, 15rem);
-//           line-height: 0.9;
-//           letter-spacing: -0.04em;
-//           font-weight: 900;
-//         }
-
-//         .hero {
-//           width: 100%;
-//           height: 100svh;
-//           padding: 2rem;
-//           background-color: #ffffff;
-//           display: flex;
-//           flex-direction: column;
-//           justify-content: center;
-//           overflow: hidden;
-//           position: relative;
-//         }
-
-//         .hero .header {
-//           display: flex;
-//           flex-direction: column;
-//         }
-
-//         .hero h1:nth-child(2) { align-self: flex-end; }
-//         .hero h1:nth-child(3) { align-self: center; }
-
-//         @media (max-width: 1000px) {
-//           .hero h1 {
-//             text-align: center;
-//             align-self: center !important;
-//           }
-//         }
-//       `}</style>
-
-//       <div className="header">
-//         <h1>{info.creativeSlogan01}</h1>
-//         <h1>{info.creativeSlogan02}</h1>
-//         <h1>{info.creativeSlogan03}</h1>
-//       </div>
-
-//       <FluidCursorTrail />
-//     </section>
-//   );
-// }
-
-
-
-
-
-// import FluidCursorTrail from "../components/cursor/fluidCursor/FluidCursorTrail";
-// import BasicNavigationBar from "../components/nav/navBar";
-// import info from "../data/information.json";
-
-// export default function Hero() {
-//   return (
-//     <section className="hero">
-//       <style>{`
-//         @import url("https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap");
-
-//         *, *::before, *::after {
-//           padding: 0;
-//           margin: 0;
-//           box-sizing: border-box;
-//         }
-
-//         h1 {
-//           font-family: "Inter", sans-serif;
-//           text-transform: uppercase;
-//           font-size: clamp(3rem, 10vw, 15rem);
-//           line-height: 0.9;
-//           letter-spacing: -0.04em;
-//           font-weight: 900;
-//         }
-
-//         .hero {
-//           width: 100%;
-//           height: 100svh;
-//           padding: 2rem;
-//           background-color: #ffffff;
-//           display: flex;
-//           flex-direction: column;
-//           justify-content: center;
-//           overflow: hidden;
-//           position: relative;
-//         }
-
-//         .hero .header {
-//           display: flex;
-//           flex-direction: column;
-//           position: relative;
-//           z-index: 2;
-//         }
-
-//         .hero h1:nth-child(2) { align-self: flex-end; }
-//         .hero h1:nth-child(3) { align-self: center; }
-
-//         @media (max-width: 1000px) {
-//           .hero h1 {
-//             text-align: center;
-//             align-self: center !important;
-//           }
-//         }
-//       `}
-//       </style>
-
-//       <BasicNavigationBar />
-
-//       <div className="header">
-//         <h1>{info.creativeSlogan01}</h1>
-//         <h1>{info.creativeSlogan02}</h1>
-//         <h1>{info.creativeSlogan03}</h1>
-//       </div>
-
-//       <FluidCursorTrail />
-//     </section>
-//   );
-// }
-
-
-
-
-
-// import info from '../data/information.json';
-
-// export default function Hero() {
-//   return (
-//     <section className="hero w-full h-screen relative overflow-hidden">
-
-//       <style>
-//         {`
-
-//         @import url("https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap");
-
-//         * {
-//           padding: 0;
-//           box-sizing: border-box;
-//           margin: 0; }
-
-//         h1 {
-//           text-transform: uppercase;
-//           font-size: clamp(3rem, 10vw, 15rem);
-//           line-height: 0.9;
-//           letter-spacing: -4%;
-//           font-weight: 900; 
-//           font-family: "Inter"; }
-
-//         .hero {
-//           width: 100%;
-//           height: 100svh;
-//           padding: 2rem;
-//           background-color: #ffffff;
-//           display: flex;
-//           flex-direction: column;
-//           justify-content: center;
-//           overflow: hidden;
-//           position: relative; }
-
-//         .hero .header {
-//           flex-direction: column;
-//           display: flex; }
-
-//         .hero h1:nth-child(2) {
-//           align-self: flex-end; }
-        
-//         .hero h1:nth-child(3) {
-//           align-self: center; }
-
-//         @media (max-width: 1000px) {
-//           .hero h1 {
-//           text-align: center;
-//           align-self: center !important; }
-//         }
-        
-//         `}
-//       </style>
-
-//       <section className="hero">
-//         <div className="header">
-//         <h1>{info.creativeSlogan01}</h1>
-//         <h1>{info.creativeSlogan02}</h1>
-//         <h1>{info.creativeSlogan03}</h1>
-//       </div>
-//       </section>
-
-//     </section>
-//   );
-// }
