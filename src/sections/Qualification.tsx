@@ -35,7 +35,7 @@ export default function Qualification({ contentRef }: QualificationProps) {
 
         .hero-content h2 {
          width: 75%;
-         color: var(--base-300);
+         color: var(--base-100);
         }
 
         @media (max-width: 1000px) {
@@ -53,7 +53,7 @@ export default function Qualification({ contentRef }: QualificationProps) {
           className="hero-content"
           ref={contentRef as React.RefObject<HTMLDivElement>}
         >
-          <h2>Qualification</h2>
+          <h2>Qualification Qualification</h2>
         </div>
 
         </section>

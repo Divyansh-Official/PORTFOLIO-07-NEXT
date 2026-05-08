@@ -15,7 +15,7 @@ export default function PositionTracker() {
 
       stringTune = StringTuneCore.getInstance();
       stringTune.use(StringPositionTracker);
-      stringTune.start(60);
+      stringTune.start(0); // 0 = event-driven, no RAF polling loop
     };
 
     init();

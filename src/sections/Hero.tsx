@@ -6,6 +6,8 @@ import Qualification from "./Qualification";
 import { useRef } from "react";
 import { useHeroAnimation } from "../hooks/useHeroAnimation";   
 import StringProgressReveal from "../components/StringProgressReveal";
+import Image from "next/image";
+import ImageSlider from "../components/ImageSlider";
 
 export default function Hero() {
 
@@ -21,8 +23,6 @@ export default function Hero() {
 
       <style>
         {`
-
-        @import url("https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..700;1,400..700&family=Instrument+Serif:ital@0;1&display=swap");
 
         :root {
           --base-100: #ebf5df;
@@ -71,12 +71,14 @@ export default function Hero() {
           height: 175svh;
           color: var(--base-200);
           overflow: hidden;
+          contain: layout style;
         }
 
         .hero-img {
           width: 100%;
           height: 100%;
           position: absolute;
+          inset: 0;
         }
 
         .hero-header {
@@ -131,7 +133,15 @@ export default function Hero() {
       <BasicNavigationBar />
 
       <div className="hero-img">
-        <img src="/images/spiderman.jpg" alt="Hero Image" />
+        <Image
+          src="/images/spiderman.jpg"
+          alt="Hero Image"
+          fill
+          priority
+          sizes="100vw"
+          quality={75}
+          style={{ objectFit: 'cover' }}
+        />
       </div>
 
       <div className="hero-header">
@@ -154,7 +164,10 @@ export default function Hero() {
     </section>
 
     <StringProgressReveal />
-    <StringProgressReveal />
+
+    <ImageSlider />
+
+    {/* <FluidCursorTrail /> */}
 
     </>
   );
