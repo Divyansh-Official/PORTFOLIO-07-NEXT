@@ -323,7 +323,7 @@ export default function SplashScreen() {
 
       <style>
         {`
-          @import url("https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Geist+Mono:wght@100..900&display=swap");
+          // @import url("https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Geist+Mono:wght@100..900&display=swap");
           
           :root {
           --base-100: #fff;
@@ -484,20 +484,21 @@ export default function SplashScreen() {
           // z-index: 1;
           // }
 
-          .hero .preloader-revealer {
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          background-color: var(--base-100);
-          clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%);
-          will-change: clip-path;
-         }
+          .preloader-revealer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: var(--base-100);
+  clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%);
+  will-change: clip-path;
+}
 
-         .hero h1 {
-         width: 90%;
-         }
+.hero h1 {
+  width: 90%;
+  overflow: hidden;   /* ← kills CLS: words at translateY(100%) stay clipped */
+}
 
          @media (max-width: 1000px) {
          .pb-row .pb-col:nth-child(1),
@@ -638,7 +639,10 @@ export default function SplashScreen() {
           as a white clipping mask that wipes away simultaneously with the
           preloader panel during the exit sequence. */}
       {/* <section className="hero z-1"> <Hero /> </section> */}
-      <div className="hero-stage"> <StackedSections /> </div>
+      <div className="hero-stage" style={{ position: "relative" }}>
+  <div className="preloader-revealer" />
+  <StackedSections />
+</div>
 
     </div>
   );

@@ -8,8 +8,8 @@ import SplashScreen from "@/src/sections/SplashScreen";
 export default function Home() {
   return (
   <div>
-    {/* <Hero /> */}
-    <SplashScreen />
+    <Hero />
+    {/* <SplashScreen /> */}
     {/* <StringProgressReveal /> */}
     <PositionTracker />
   </div>

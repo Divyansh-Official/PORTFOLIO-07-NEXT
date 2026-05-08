@@ -16,6 +16,7 @@ export default function Hero() {
   useHeroAnimation(heroRef, canvasRef, contentRef);
 
   return (
+    <>
     <section className="hero" ref={heroRef}>
 
       <style>
@@ -25,7 +26,8 @@ export default function Hero() {
 
         :root {
           --base-100: #ebf5df;
-          --base-200: #fec81d;
+          // --base-200: #fec81d;
+          --base-200: #fff;
           --base-300: #000;
         }
 
@@ -117,7 +119,7 @@ export default function Hero() {
          color: var(--base-300);
         }
 
-         @media (max-width: 1000px) {
+        @media (max-width: 1000px) {
          .hero-content h2 {
            width: calc(100% - 4rem);
          }
@@ -139,9 +141,10 @@ export default function Hero() {
 
       <canvas className="hero-canvas" ref={canvasRef}></canvas>
 
-      <div className="hero-content" ref={contentRef as React.RefObject<HTMLDivElement>}>
-        <h2> {info.role} </h2>
-      </div>
+      {/* <div className="hero-content" ref={contentRef as React.RefObject<HTMLDivElement>}> */}
+        {/* <h2> {info.role} </h2> */}
+       <Qualification contentRef={contentRef} />
+      {/* </div> */}
 
       {/* <section className="qualification">
         <Qualification />
@@ -149,5 +152,10 @@ export default function Hero() {
 
       {/* <FluidCursorTrail /> */}
     </section>
+
+    <StringProgressReveal />
+    <StringProgressReveal />
+
+    </>
   );
 }

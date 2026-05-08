@@ -1,35 +1,17 @@
 import StringProgressReveal from "../components/StringProgressReveal";
 
-export default function Qualification() {
+interface QualificationProps {
+  contentRef: React.RefObject<HTMLElement | null>;
+}
+
+export default function Qualification({ contentRef }: QualificationProps) {
     return (
         <>
 
         <style>
         {`
 
-        .qualification {
-         position: relative;
-         width: 100%;
-         height: 100svh;
-         display: flex;
-         justify-content: center;
-         align-items: center;
-         background-color: var(--base-300);
-         color: var(--base-100);
-        }
-
-        .qualification h1 {
-         width: 40%;
-         text-align: center;
-        }
-
-        @media (max-width: 1000px) {
-         .qualification h1 {
-           width: calc(100% - 4rem);
-         }
-        }
-
-        .university-image {
+        .hero-content {
           position: absolute;
           bottom: 0;
           width: 100%;
@@ -40,26 +22,40 @@ export default function Qualification() {
           text-align: center;
         }
 
-        // .university-image {
-        //  width: 75%;
-        //  color: var(--base-300);
-        // }
+        .string-progress-reveal {
+          position: absolute;
+          bottom: 0;
+          width: 100%;
+          height: 125svh;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          text-align: center;
+        }
 
-        // @media (max-width: 1000px) {
-        //  .university-image {
-        //    width: calc(100% - 4rem);
-        //  }
-        // }
+        .hero-content h2 {
+         width: 75%;
+         color: var(--base-300);
+        }
+
+        @media (max-width: 1000px) {
+         .hero-content h2 {
+           width: calc(100% - 4rem);
+         }
+        }
+
         
         `}
         </style>
 
         <section className="qualification">
-            {/* <h1> Qualification </h1> */}
-            
-            <div className="university-image">
-                <StringProgressReveal />
-            </div>
+             <div
+          className="hero-content"
+          ref={contentRef as React.RefObject<HTMLDivElement>}
+        >
+          <h2>Qualification</h2>
+        </div>
+
         </section>
         </>
     )
