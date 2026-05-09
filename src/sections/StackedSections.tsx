@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Hero from "./Hero";
-import Qualification from "./Qualification";
+import intro from "./Introduction";
 // import Skills from "./Skills";
 // import Projects from "./Projects";
 // import Contact from "./Contact";
@@ -15,7 +15,7 @@ gsap.registerPlugin(ScrollTrigger);
 // Each entry becomes one card in the stack.
 const SECTIONS = [
   { id: "hero",          Component: Hero },
-  { id: "qualification", Component: Qualification },
+  // { id: "intro", Component: Introduction },
   // { id: "skills",       Component: Skills },
   // { id: "projects",     Component: Projects },
   // { id: "contact",      Component: Contact },

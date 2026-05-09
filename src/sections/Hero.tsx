@@ -2,12 +2,13 @@
 import FluidCursorTrail from "../components/cursor/fluidCursor/FluidCursorTrail";
 import BasicNavigationBar from "../components/nav/navBar";
 import info from "../data/information.json";
-import Qualification from "./Qualification";
+import Qualification from "./Introduction";
 import { useRef } from "react";
 import { useHeroAnimation } from "../hooks/useHeroAnimation";   
 import StringProgressReveal from "../components/StringProgressReveal";
 import Image from "next/image";
 import ImageSlider from "../components/ImageSlider";
+import SectionData from "../data/sections_data.json"
 
 export default function Hero() {
 
@@ -79,6 +80,7 @@ export default function Hero() {
           height: 100%;
           position: absolute;
           inset: 0;
+          top: -150px;
         }
 
         .hero-header {
@@ -134,7 +136,7 @@ export default function Hero() {
 
       <div className="hero-img">
         <Image
-          src="/images/spiderman.jpg"
+          src={SectionData.hero.bgimage1}
           alt="Hero Image"
           fill
           priority
@@ -145,7 +147,7 @@ export default function Hero() {
       </div>
 
       <div className="hero-header">
-        <h1> {info.creativeFirstName} {info.creativeLastName} </h1>
+        <h1> {info.creativeFirstName} </h1>
         <p> {info.headline} </p>
       </div>
 
@@ -163,9 +165,9 @@ export default function Hero() {
       {/* <FluidCursorTrail /> */}
     </section>
 
-    <StringProgressReveal />
+    {/* <StringProgressReveal /> */}
 
-    <ImageSlider />
+    {/* <ImageSlider /> */}
 
     {/* <FluidCursorTrail /> */}
 

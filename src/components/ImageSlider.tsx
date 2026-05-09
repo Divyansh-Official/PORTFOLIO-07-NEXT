@@ -1,5 +1,20 @@
 import React from "react";
 
+const QUANTITY = 10;
+
+const images = [
+  "/images/QualificationImageSliderImages/1.png",
+  "/images/QualificationImageSliderImages/2.png",
+  "/images/QualificationImageSliderImages/3.png",
+  "/images/QualificationImageSliderImages/4.png",
+  "/images/QualificationImageSliderImages/5.png",
+  "/images/QualificationImageSliderImages/6.png",
+  "/images/QualificationImageSliderImages/7.png",
+  "/images/QualificationImageSliderImages/7.png",
+  "/images/QualificationImageSliderImages/7.png",
+  "/images/QualificationImageSliderImages/7.png",
+];
+
 const ImageSlider: React.FC = () => {
   return (
     <>
@@ -7,7 +22,7 @@ const ImageSlider: React.FC = () => {
         @import url('https://fonts.cdnfonts.com/css/ica-rubrik-black');
         @import url('https://fonts.cdnfonts.com/css/poppins');
 
-        .banner {
+        .is-banner {
           width: 100%;
           height: 100vh;
           text-align: center;
@@ -15,7 +30,7 @@ const ImageSlider: React.FC = () => {
           position: relative;
         }
 
-        .banner .slider {
+        .is-banner .is-slider {
           position: absolute;
           width: 200px;
           height: 250px;
@@ -23,11 +38,11 @@ const ImageSlider: React.FC = () => {
           left: calc(50% - 100px);
           transform-style: preserve-3d;
           transform: perspective(1000px);
-          animation: autoRun 20s linear infinite;
+          animation: isAutoRun 20s linear infinite;
           z-index: 2;
         }
 
-        .banner .slider .item {
+        .is-banner .is-slider .is-item {
           position: absolute;
           inset: 0 0 0 0;
           transform:
@@ -35,7 +50,7 @@ const ImageSlider: React.FC = () => {
             translateZ(550px);
         }
 
-        @keyframes autoRun {
+        @keyframes isAutoRun {
           from {
             transform: perspective(1000px) rotateX(-16deg) rotateY(0deg);
           }
@@ -44,13 +59,14 @@ const ImageSlider: React.FC = () => {
           }
         }
 
-        .banner .slider .item img {
+        .is-banner .is-slider .is-item img {
           width: 100%;
           height: 100%;
           object-fit: cover;
+          border-radius: 10px;
         }
 
-        .banner .content {
+        .is-banner .is-content {
           position: absolute;
           bottom: 0;
           left: 50%;
@@ -64,15 +80,16 @@ const ImageSlider: React.FC = () => {
           z-index: 1;
         }
 
-        .banner .content h1 {
-          font-family: ICA Rubrik;
+        .is-banner .is-content h1 {
+          font-family: 'ICA Rubrik', sans-serif;
           font-size: 16em;
           line-height: 1em;
-          color: #25283B;
+        //   color: #25283B;
+        color: #713d46;
           position: relative;
         }
 
-        .banner .content h1::after {
+        .is-banner .is-content h1::after {
           position: absolute;
           inset: 0 0 0 0;
           content: attr(data-content);
@@ -81,18 +98,18 @@ const ImageSlider: React.FC = () => {
           color: transparent;
         }
 
-        .banner .content .author {
-          font-family: Poppins;
+        .is-banner .is-content .is-author {
+          font-family: 'Poppins', sans-serif;
           text-align: right;
           max-width: 200px;
         }
 
-        .banner .content h2 {
+        .is-banner .is-content h2 {
           font-size: 3em;
         }
 
-        .banner .content .model {
-          background-image: url(images/Model.png);
+        .is-banner .is-content .is-model {
+          background-image: url('/images/Model.png');
           width: 100%;
           height: 75vh;
           position: absolute;
@@ -105,98 +122,30 @@ const ImageSlider: React.FC = () => {
         }
       `}</style>
 
-      <div className="banner">
-        <div className="slider" style={{ "--quantity": 10 } as React.CSSProperties}>
-          <div className="item">
-            <img
-              className="item"
-              style={{ "--position": 1 } as React.CSSProperties}
-              src="images/QualificationImageSliderImages/1.png"
-              alt=""
-            />
-          </div>
-          <div className="item">
-            <img
-              className="item"
-              style={{ "--position": 2 } as React.CSSProperties}
-              src="images/QualificationImageSliderImages/2.png"
-              alt=""
-            />
-          </div>
-          <div className="item">
-            <img
-              className="item"
-              style={{ "--position": 3 } as React.CSSProperties}
-              src="images/QualificationImageSliderImages/3.png"
-              alt=""
-            />
-          </div>
-          <div className="item">
-            <img
-              className="item"
-              style={{ "--position": 4 } as React.CSSProperties}
-              src="images/QualificationImageSliderImages/4.png"
-              alt=""
-            />
-          </div>
-          <div className="item">
-            <img
-              className="item"
-              style={{ "--position": 5 } as React.CSSProperties}
-              src="images/QualificationImageSliderImages/5.png"
-              alt=""
-            />
-          </div>
-          <div className="item">
-            <img
-              className="item"
-              style={{ "--position": 6 } as React.CSSProperties}
-              src="images/QualificationImageSliderImages/6.png"
-              alt=""
-            />
-          </div>
-          <div className="item">
-            <img
-              className="item"
-              style={{ "--position": 7 } as React.CSSProperties}
-              src="images/QualificationImageSliderImages/7.png"
-              alt=""
-            />
-          </div>
-          <div className="item">
-            <img
-              className="item"
-              style={{ "--position": 8 } as React.CSSProperties}
-              src="images/QualificationImageSliderImages/7.png"
-              alt=""
-            />
-          </div>
-          <div className="item">
-            <img
-              className="item"
-              style={{ "--position": 9 } as React.CSSProperties}
-              src="images/QualificationImageSliderImages/7.png"
-              alt=""
-            />
-          </div>
-          <div className="item">
-            <img
-              className="item"
-              style={{ "--position": 10 } as React.CSSProperties}
-              src="images/QualificationImageSliderImages/7.png"
-              alt=""
-            />
-          </div>
+      <div className="is-banner bg-[#2E0D13]">
+        <div
+          className="is-slider"
+          style={{ "--quantity": QUANTITY } as React.CSSProperties}
+        >
+          {images.map((src, index) => (
+            <div
+              className="is-item"
+              key={index}
+              style={{ "--position": index + 1 } as React.CSSProperties}
+            >
+              <img src={src} alt="" />
+            </div>
+          ))}
         </div>
 
-        <div className="content">
+        <div className="is-content">
           <h1 data-content="CHANDIGARH UNIVERSITY">CHANDIGARH UNIVERSITY</h1>
-          <div className="author">
+          <div className="is-author">
             <h2>BE - CSE</h2>
             <p>2022 - 2026</p>
           </div>
 
-          <div className="model"></div>
+          <div className="is-model"></div>
         </div>
       </div>
     </>

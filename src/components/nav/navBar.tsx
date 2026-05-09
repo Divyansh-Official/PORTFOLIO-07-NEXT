@@ -8,6 +8,9 @@ export default function BasicNavigationBar() {
 
       <style>
         {`
+        .nav-links {
+        backgroundC
+        }
 
         @media (max-width: 1000px) {
           .nav-links {
@@ -28,7 +31,7 @@ export default function BasicNavigationBar() {
           alignItems: "center",
           gap: "2.5rem",
           padding: "1.25rem",}}>
-          <div className="nav-logo"> <a href=""> {info.name} </a> </div>
+          <div className="nav-logo uppercase"> <a href=""> {info.name} </a> </div>
 
           <div className="nav-links flex gap-4">
             <a href="/qualification">Qualification</a>

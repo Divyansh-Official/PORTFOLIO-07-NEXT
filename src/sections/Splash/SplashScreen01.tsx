@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect } from "react";
-import Hero from "./Hero";
-import info from "../data/information.json";
-import loader from "../lottieFiles/Loader.json";
-import server from "../lottieFiles/Server.json";
-import wifi from "../lottieFiles/Wifi.json";
-import deadpool from "../lottieFiles/Deadpool.json";
+import Hero from "../Hero";
+import info from "../../data/information.json";
+import loader from "../../lottieFiles/Loader.json";
+import server from "../../lottieFiles/Server.json";
+import wifi from "../../lottieFiles/Wifi.json";
+import deadpool from "../../lottieFiles/Deadpool.json";
 import Lottie from "lottie-react";
-import StackedSections from "./StackedSections";
+import StackedSections from "../StackedSections";
 
 // ─── GSAP + Plugins ──────────────────────────────────────────────────────────
 // SplitText splits text nodes into animatable word/line spans.
@@ -26,7 +26,7 @@ CustomEase.create("hop", "0.9, 0, 0.1, 1");
 CustomEase.create("glide", "0.8, 0, 0.2, 1");
 // ─────────────────────────────────────────────────────────────────────────────
 
-export default function SplashScreen() {
+export default function SplashScreen01() {
 
   // ─── Animation bootstrap ───────────────────────────────────────────────────
   // Runs once after the component mounts (equivalent to DOMContentLoaded).

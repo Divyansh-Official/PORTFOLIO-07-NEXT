@@ -4,7 +4,7 @@ interface QualificationProps {
   contentRef: React.RefObject<HTMLElement | null>;
 }
 
-export default function Qualification({ contentRef }: QualificationProps) {
+export default function Introduction({ contentRef }: QualificationProps) {
     return (
         <>
 
@@ -35,7 +35,7 @@ export default function Qualification({ contentRef }: QualificationProps) {
 
         .hero-content h2 {
          width: 75%;
-         color: var(--base-100);
+         color: #fc2f2f;
         }
 
         @media (max-width: 1000px) {
@@ -53,7 +53,7 @@ export default function Qualification({ contentRef }: QualificationProps) {
           className="hero-content"
           ref={contentRef as React.RefObject<HTMLDivElement>}
         >
-          <h2>Qualification Qualification</h2>
+          <h2>Introduction</h2>
         </div>
 
         </section>

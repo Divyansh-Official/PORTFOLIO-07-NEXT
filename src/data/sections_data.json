@@ -1,0 +1,6 @@
+{
+    "hero": {
+        "bgimage1": "/hero/bg1.png",
+        "bgimage2": "/hero/bg2.png"
+    }
+}
