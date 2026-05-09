@@ -8,9 +8,6 @@ export default function BasicNavigationBar() {
 
       <style>
         {`
-        .nav-links {
-        backgroundC
-        }
 
         @media (max-width: 1000px) {
           .nav-links {
@@ -18,6 +15,13 @@ export default function BasicNavigationBar() {
           gap: 0;
           align-items: flex-end; } 
           }
+
+          // .navbar-container {
+          // width: 100%;
+          // padding-top: 10px;
+          // position: relative;
+          // z-index: 100;
+        }
         
         `}
       </style>
@@ -33,7 +37,7 @@ export default function BasicNavigationBar() {
           padding: "1.25rem",}}>
           <div className="nav-logo uppercase"> <a href=""> {info.name} </a> </div>
 
-          <div className="nav-links flex gap-4">
+          <div className="nav-links flex gap-4" style={{backgroundColor: "tranparent", padding: "30px", borderRadius: "15px", backgroundImage: "linear-gradient( 120deg, rgba(101, 11, 14, 1), rgba(101, 11, 14, 1) )" }}>
             <a href="/qualification">Qualification</a>
             <a href="/skills">Skills</a>
             <a href="/projects">Projects</a>

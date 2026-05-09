@@ -3,18 +3,66 @@ import FluidCursorTrail from "../components/cursor/fluidCursor/FluidCursorTrail"
 import BasicNavigationBar from "../components/nav/navBar";
 import info from "../data/information.json";
 import Qualification from "./Introduction";
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useHeroAnimation } from "../hooks/useHeroAnimation";   
 import StringProgressReveal from "../components/StringProgressReveal";
 import Image from "next/image";
 import ImageSlider from "../components/ImageSlider";
 import SectionData from "../data/sections_data.json"
+import { Span } from "next/dist/trace";
 
 export default function Hero() {
 
   const heroRef    = useRef<HTMLElement>(null);
   const canvasRef  = useRef<HTMLCanvasElement>(null);
   const contentRef = useRef<HTMLElement>(null);
+
+  const [clipPath, setClipPath] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    const updateClipPath = () => {
+      const heroEl = heroRef.current;
+      const navEl = document.querySelector('.nav-links') as HTMLElement;
+
+      if (!heroEl || !navEl) return;
+
+      const W = heroEl.offsetWidth;
+      const H = heroEl.offsetHeight;
+      const R = 20; // Radius for the curve
+
+      const navRect = navEl.getBoundingClientRect();
+      
+      const cutoutLeft = navRect.left - 30; // 30px padding
+      const cutoutBottom = navEl.offsetHeight + navEl.offsetTop + 20; // 20px padding below nav
+
+      // If mobile view, links stack or behave differently, so we might not need the clip path
+      if (window.innerWidth < 1000) {
+        setClipPath(undefined);
+        return;
+      }
+
+      // Path with two SVG arcs (A commands) for the perfect rounded curve as requested
+      // const path = `path("M 0 0 L ${cutoutLeft - R} 0 A ${R} ${R} 0 0 1 ${cutoutLeft} ${R} L ${cutoutLeft} ${cutoutBottom - R} A ${R} ${R} 0 0 0 ${cutoutLeft + R} ${cutoutBottom} L ${W} ${cutoutBottom} L ${W} ${H} L 0 ${H} Z")`;
+      const path = `path("M 0 0 L ${cutoutLeft - R} 0 A ${R} ${R} 0 0 1 ${cutoutLeft} ${R} L ${cutoutLeft} ${cutoutBottom - R} A ${R} ${R} 0 0 0 ${cutoutLeft + R} ${cutoutBottom} L ${W - R} ${cutoutBottom} A ${R} ${R} 0 0 1 ${W} ${cutoutBottom + R} L ${W} ${H - R} A ${R} ${R} 0 0 1 ${W - R} ${H} L 0 ${H} Z")`;
+      setClipPath(path);
+    };
+
+    updateClipPath();
+    
+    // Use ResizeObserver to catch font loads or layout shifts
+    let observer: ResizeObserver | null = null;
+    const navEl = document.querySelector('.nav-links');
+    if (navEl && window.ResizeObserver) {
+      observer = new ResizeObserver(updateClipPath);
+      observer.observe(navEl);
+    }
+    window.addEventListener('resize', updateClipPath);
+
+    return () => {
+      window.removeEventListener('resize', updateClipPath);
+      if (observer) observer.disconnect();
+    };
+  }, []);
 
   useHeroAnimation(heroRef, canvasRef, contentRef);
 
@@ -129,12 +177,21 @@ export default function Hero() {
          }
         }
 
+        .hero-bg {
+          position: absolute;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+          transition: clip-path 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+
         `}
       </style>
 
-      <BasicNavigationBar />
+      <div className="hero-bg" style={clipPath ? { clipPath } : {}}>
+        <div className="hero-img">
 
-      <div className="hero-img">
         <Image
           src={SectionData.hero.bgimage1}
           alt="Hero Image"
@@ -157,6 +214,7 @@ export default function Hero() {
         {/* <h2> {info.role} </h2> */}
        <Qualification contentRef={contentRef} />
       {/* </div> */}
+      </div>
 
       {/* <section className="qualification">
         <Qualification />
