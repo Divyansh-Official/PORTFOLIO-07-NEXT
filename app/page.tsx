@@ -13,18 +13,27 @@ export default function Home() {
     <style>
       {`
       
-        .navbar-container {
+        // .navbar-container {
+        //   width: 100%;
+        //   padding-top: 10px;
+        //   position: relative;
+        //   z-index: 100;
+        // }
+
+        .heroSection {
           width: 100%;
           padding-top: 10px;
           position: relative;
-          z-index: 100;
+          // z-index: 100;
         }
       `}
     </style>
     <div className="navbar-container"> 
         <BasicNavigationBar />
       </div>
-    <Hero />
+    <div className="heroSection">
+      <Hero />
+    </div>
     {/* <SplashScreen /> */}
     {/* <StringProgressReveal /> */}
     {/* <StackedSections /> */}

@@ -4,11 +4,21 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 interface ModelTransform {
   position?: { x?: number; y?: number; z?: number };
-  rotation?: { x?: number; y?: number; z?: number }; // in degrees
+  rotation?: { x?: number; y?: number; z?: number }; // degrees
   scale?: number;
 }
 
-export function use3dElement(containerId: string, transform: ModelTransform = {}) {
+interface ScrollConfig {
+  rotation?: { x?: number; y?: number; z?: number }; // degrees per full page scroll
+  position?: { x?: number; y?: number; z?: number }; // units per full page scroll
+  speed?: number; // multiplier: 1 = normal, 2 = faster, 0.5 = slower
+}
+
+export function use3dElement(
+  containerId: string,
+  transform: ModelTransform = {},
+  scroll: ScrollConfig = {}
+) {
   useEffect(() => {
     const container = document.getElementById(containerId);
     if (!container) return;
@@ -27,7 +37,7 @@ export function use3dElement(containerId: string, transform: ModelTransform = {}
     scene.add(ambientLight);
 
     const directionalLight = new THREE.DirectionalLight(0xffffff, 2);
-    directionalLight.position.set(5, 5, 5);
+    directionalLight.position.set(15, 15, 15);
     scene.add(directionalLight);
 
     const pointLight = new THREE.PointLight(0xffffff, 1);
@@ -39,13 +49,18 @@ export function use3dElement(containerId: string, transform: ModelTransform = {}
     renderer.setPixelRatio(window.devicePixelRatio);
     container.appendChild(renderer.domElement);
 
+    // Track base transform after model loads
+    const basePosition = new THREE.Vector3();
+    const baseRotation = new THREE.Euler();
+    let model: THREE.Group | null = null;
+
     const loader = new GLTFLoader();
     loader.load(
       '/3dModel/sword.glb',
       function (gltf) {
-        const model = gltf.scene;
+        model = gltf.scene;
 
-        // Auto-scale first
+        // Auto-scale
         const box = new THREE.Box3().setFromObject(model);
         const center = box.getCenter(new THREE.Vector3());
         const size = box.getSize(new THREE.Vector3());
@@ -54,7 +69,7 @@ export function use3dElement(containerId: string, transform: ModelTransform = {}
         model.scale.setScalar(autoScale);
         model.position.sub(center.multiplyScalar(autoScale));
 
-        // ✅ Apply your custom transform on top
+        // Apply initial transform
         const { position, rotation, scale } = transform;
 
         if (position) {
@@ -73,11 +88,42 @@ export function use3dElement(containerId: string, transform: ModelTransform = {}
           model.scale.setScalar(autoScale * scale);
         }
 
+        // ✅ Save base transform for scroll calculations
+        basePosition.copy(model.position);
+        baseRotation.copy(model.rotation);
+
         scene.add(model);
       },
       undefined,
-      function (error) { console.error('GLTFLoader error:', error); }
+      (error) => console.error('GLTFLoader error:', error)
     );
+
+    // ✅ Scroll handler
+    const handleScroll = () => {
+      if (!model) return;
+
+      const scrollY = window.scrollY;
+      const pageHeight = document.body.scrollHeight - window.innerHeight;
+      const scrollFraction = pageHeight > 0 ? scrollY / pageHeight : 0; // 0 to 1
+
+      const speed = scroll.speed ?? 1;
+
+      // Rotation from scroll
+      const rx = THREE.MathUtils.degToRad((scroll.rotation?.x ?? 0) * scrollFraction * speed);
+      const ry = THREE.MathUtils.degToRad((scroll.rotation?.y ?? 0) * scrollFraction * speed);
+      const rz = THREE.MathUtils.degToRad((scroll.rotation?.z ?? 0) * scrollFraction * speed);
+
+      model.rotation.x = baseRotation.x + rx;
+      model.rotation.y = baseRotation.y + ry;
+      model.rotation.z = baseRotation.z + rz;
+
+      // Position from scroll
+      model.position.x = basePosition.x + (scroll.position?.x ?? 0) * scrollFraction * speed;
+      model.position.y = basePosition.y + (scroll.position?.y ?? 0) * scrollFraction * speed;
+      model.position.z = basePosition.z + (scroll.position?.z ?? 0) * scrollFraction * speed;
+    };
+
+    window.addEventListener('scroll', handleScroll);
 
     const handleResize = () => {
       camera.aspect = window.innerWidth / window.innerHeight;
@@ -95,6 +141,7 @@ export function use3dElement(containerId: string, transform: ModelTransform = {}
 
     return () => {
       cancelAnimationFrame(animId);
+      window.removeEventListener('scroll', handleScroll);
       window.removeEventListener('resize', handleResize);
       renderer.dispose();
       if (container.contains(renderer.domElement)) {
@@ -103,6 +150,116 @@ export function use3dElement(containerId: string, transform: ModelTransform = {}
     };
   }, [containerId]);
 }
+
+
+
+
+
+// import { useEffect } from 'react';
+// import * as THREE from 'three';
+// import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+
+// interface ModelTransform {
+//   position?: { x?: number; y?: number; z?: number };
+//   rotation?: { x?: number; y?: number; z?: number }; // in degrees
+//   scale?: number;
+// }
+
+// export function use3dElement(containerId: string, transform: ModelTransform = {}) {
+//   useEffect(() => {
+//     const container = document.getElementById(containerId);
+//     if (!container) return;
+
+//     const scene = new THREE.Scene();
+
+//     const camera = new THREE.PerspectiveCamera(
+//       45,
+//       window.innerWidth / window.innerHeight,
+//       0.1,
+//       1000
+//     );
+//     camera.position.set(0, 0, 5);
+
+//     const ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
+//     scene.add(ambientLight);
+
+//     const directionalLight = new THREE.DirectionalLight(0xffffff, 2);
+//     directionalLight.position.set(5, 5, 5);
+//     scene.add(directionalLight);
+
+//     const pointLight = new THREE.PointLight(0xffffff, 1);
+//     pointLight.position.set(-5, -5, -5);
+//     scene.add(pointLight);
+
+//     const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+//     renderer.setSize(window.innerWidth, window.innerHeight);
+//     renderer.setPixelRatio(window.devicePixelRatio);
+//     container.appendChild(renderer.domElement);
+
+//     const loader = new GLTFLoader();
+//     loader.load(
+//       '/3dModel/sword.glb',
+//       function (gltf) {
+//         const model = gltf.scene;
+
+//         // Auto-scale first
+//         const box = new THREE.Box3().setFromObject(model);
+//         const center = box.getCenter(new THREE.Vector3());
+//         const size = box.getSize(new THREE.Vector3());
+//         const maxDim = Math.max(size.x, size.y, size.z);
+//         const autoScale = 2 / maxDim;
+//         model.scale.setScalar(autoScale);
+//         model.position.sub(center.multiplyScalar(autoScale));
+
+//         // ✅ Apply your custom transform on top
+//         const { position, rotation, scale } = transform;
+
+//         if (position) {
+//           model.position.x += position.x ?? 0;
+//           model.position.y += position.y ?? 0;
+//           model.position.z += position.z ?? 0;
+//         }
+
+//         if (rotation) {
+//           model.rotation.x += THREE.MathUtils.degToRad(rotation.x ?? 0);
+//           model.rotation.y += THREE.MathUtils.degToRad(rotation.y ?? 0);
+//           model.rotation.z += THREE.MathUtils.degToRad(rotation.z ?? 0);
+//         }
+
+//         if (scale !== undefined) {
+//           model.scale.setScalar(autoScale * scale);
+//         }
+
+//         scene.add(model);
+//       },
+//       undefined,
+//       function (error) { console.error('GLTFLoader error:', error); }
+//     );
+
+//     const handleResize = () => {
+//       camera.aspect = window.innerWidth / window.innerHeight;
+//       camera.updateProjectionMatrix();
+//       renderer.setSize(window.innerWidth, window.innerHeight);
+//     };
+//     window.addEventListener('resize', handleResize);
+
+//     let animId: number;
+//     const reRender3D = () => {
+//       animId = requestAnimationFrame(reRender3D);
+//       renderer.render(scene, camera);
+//     };
+//     reRender3D();
+
+//     return () => {
+//       cancelAnimationFrame(animId);
+//       window.removeEventListener('resize', handleResize);
+//       renderer.dispose();
+//       if (container.contains(renderer.domElement)) {
+//         container.removeChild(renderer.domElement);
+//       }
+//     };
+//   }, [containerId]);
+// }
 
 
 

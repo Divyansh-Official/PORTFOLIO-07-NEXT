@@ -7,22 +7,48 @@ import { useHeroAnimation } from "../hooks/useHeroAnimation";
 import Image from "next/image";
 import SectionData from "../data/sections_data.json";
 import { use3dElement } from "../hooks/use3dElement"; // ✅ import
+import { useFluidEffect } from "../hooks/useFluidEffect";
 
 export default function Hero() {
 
   const heroRef    = useRef<HTMLElement>(null);
   const canvasRef  = useRef<HTMLCanvasElement>(null);
   const contentRef = useRef<HTMLElement>(null);
+  const canvasRefInteractiveBG = useFluidEffect();
 
   const [clipPath, setClipPath] = useState<string | undefined>(undefined);
 
   // use3dElement("container3D"); // ✅ call the hook
 
-  use3dElement("container3D", {
-  position: { x: 3, y: 0, z: 0 },  // move right, slightly down
-  rotation: { x: 10, y: -60, z: -76 },    // degrees on each axis
-  scale: 1.5,                             // 1 = auto size, >1 bigger, <1 smaller
-});
+//   use3dElement("container3D", {
+//   position: { x: 3, y: 0, z: 0 },  // move right, slightly down
+//   rotation: { x: 10, y: -60, z: -76 },    // degrees on each axis
+//   scale: 1.5,                             // 1 = auto size, >1 bigger, <1 smaller
+// });
+
+use3dElement(
+  "container3D",
+
+  // Initial transform
+  {
+    position: { x: 3, y: 0, z: 0 },
+    rotation: { x: 10, y: -60, z: -76 },
+    scale: 1.75,
+  },
+
+  // Scroll animation
+  {
+    speed: 0.71,
+    rotation: { x: 20, y: 377.5, z: 390 },
+    position: { x: -4.12, y: 0.25, z: 0 },
+  },
+
+  // Cursor reaction
+  {
+    rotation: { x: 15, y: 25 }, // max tilt in degrees when cursor at screen edge
+    speed: 0.05,                 // lerp: 0.01 = very slow/floaty, 0.15 = snappy
+  }
+);
 
   useEffect(() => {
     const updateClipPath = () => {
@@ -71,6 +97,9 @@ export default function Hero() {
     <section className="hero" ref={heroRef}>
 
       <style>{`
+        @import url('https://fonts.cdnfonts.com/css/ica-rubrik-black');
+        @import url('https://fonts.cdnfonts.com/css/poppins');
+
         :root {
           --base-100: #ebf5df;
           --base-200: #fff;
@@ -107,7 +136,12 @@ export default function Hero() {
           gap: 0.5rem;
           text-align: center;
         }
-        .hero-header p { width: 75%; }
+        .hero-header p { 
+         width: 75%; 
+         }
+        .hero-header h1 {
+
+        }
         .hero-canvas { position: absolute; bottom: 0; width: 100%; height: 100%; pointer-events: none; }
         .hero-content {
           position: absolute;
@@ -134,12 +168,24 @@ export default function Hero() {
           z-index: 100;
           pointer-events: none;
         }
+
+        .flash-image-gallery-container {
+        position: fixed;
+        left: 15%;
+        top: 1%;
+        border-radius: 10px;
+        width: 40%;
+        height: 15%;
+        background-color: "transparent;
+        backdrop-filter: "blur(500px)";
+        // inset: 0;
+        }
       `}</style>
 
       <div className="hero-bg" style={clipPath ? { clipPath } : {}}>
 
-        <div className="hero-img">
-          <Image
+        {/* <div className="hero-img"> */}
+          {/* <Image
             src={SectionData.hero.bgimage1}
             alt="Hero Image"
             fill
@@ -147,12 +193,38 @@ export default function Hero() {
             sizes="100vw"
             quality={75}
             style={{ objectFit: 'cover' }}
-          />
+          /> */}
+
+          <canvas
+          ref={canvasRefInteractiveBG}
+          style={{
+            objectFit: 'cover',
+            position: "absolute",
+            top: "-150px",
+            left: 0,
+            width: "100%",
+            height: "100%",
+            inset: 0,
+            scale: 1.75
+          }}
+          data-sizes="100vw"
+          data-priority="true"
+          data-quality={75}
+        />
+        {/* </div> */}
+
+        <div className="flash-image-gallery-container">
+
         </div>
 
-        <div className="hero-header">
+        <div className="hero-header" style={{marginBottom: "20px"}}>
           <h1>{info.creativeFirstName}</h1>
           <p>{info.headline}</p>
+
+          <div className="engagment-button" style={{justifyContent: "end"}}>
+            <button> Hire Me </button>
+            <button> Message Me </button>
+          </div>
         </div>
 
         <canvas className="hero-canvas" ref={canvasRef}></canvas>

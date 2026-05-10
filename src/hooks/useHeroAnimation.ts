@@ -65,7 +65,7 @@ const fragmentShader = `
 // ── Config ────────────────────────────────────────────────────────────────────
 
 // color: "#ebf5df", "#43202b", "#2E0D13"
-const CONFIG = { color: "#000000", spread: 0.5, speed: 1.75 };
+const CONFIG = { color: "#000000", spread: 0.5, speed: 1.5 };
 
 function hexToRgb(hex: string) {
   const r = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);

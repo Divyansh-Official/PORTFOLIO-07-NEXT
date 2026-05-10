@@ -35,7 +35,9 @@ export default function Introduction({ contentRef }: QualificationProps) {
 
         .hero-content h2 {
          width: 75%;
-         color: #fc2f2f;
+        //  color: #fc2f2f;
+         color: #aa0303;
+
         }
 
         @media (max-width: 1000px) {
