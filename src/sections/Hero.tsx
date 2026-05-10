@@ -8,6 +8,7 @@ import Image from "next/image";
 import SectionData from "../data/sections_data.json";
 import { use3dElement } from "../hooks/use3dElement"; // ✅ import
 import { useFluidEffect } from "../hooks/useFluidEffect";
+import FlashImageGallery from "../components/FlashImageGallery";
 
 export default function Hero() {
 
@@ -54,33 +55,42 @@ use3dElement(
     const updateClipPath = () => {
       const heroEl = heroRef.current;
       const navEl = document.querySelector('.nav-links') as HTMLElement;
+      const logoEl = document.querySelector('.nav-logo') as HTMLElement;
 
-      if (!heroEl || !navEl) return;
+      if (!heroEl || !navEl || !logoEl) return;
 
       const W = heroEl.offsetWidth;
       const H = heroEl.offsetHeight;
       const R = 20;
 
       const navRect = navEl.getBoundingClientRect();
-      const cutoutLeft = navRect.left - 10;
-      const cutoutBottom = navEl.offsetHeight + navEl.offsetTop + 1;
+      const logoRect = logoEl.getBoundingClientRect();
+
+      const cutoutRightX = navRect.left - 10;
+      const cutoutRightY = navEl.offsetHeight + navEl.offsetTop + 1;
+
+      const cutoutLeftX = logoRect.right + 10;
+      const cutoutLeftY = cutoutRightY; // Keep vertical depth symmetrical
 
       if (window.innerWidth < 1000) {
         setClipPath(undefined);
         return;
       }
 
-      const path = `path("M 0 0 L ${cutoutLeft - R} 0 A ${R} ${R} 0 0 1 ${cutoutLeft} ${R} L ${cutoutLeft} ${cutoutBottom - R} A ${R} ${R} 0 0 0 ${cutoutLeft + R} ${cutoutBottom} L ${W - R} ${cutoutBottom} A ${R} ${R} 0 0 1 ${W} ${cutoutBottom + R} L ${W} ${H - R} A ${R} ${R} 0 0 1 ${W - R} ${H} L 0 ${H} Z")`;
+      const path = `path("M ${cutoutLeftX + R} 0 L ${cutoutRightX - R} 0 A ${R} ${R} 0 0 1 ${cutoutRightX} ${R} L ${cutoutRightX} ${cutoutRightY - R} A ${R} ${R} 0 0 0 ${cutoutRightX + R} ${cutoutRightY} L ${W - R} ${cutoutRightY} A ${R} ${R} 0 0 1 ${W} ${cutoutRightY + R} L ${W} ${H - R} A ${R} ${R} 0 0 1 ${W - R} ${H} L ${R} ${H} A ${R} ${R} 0 0 1 0 ${H - R} L 0 ${cutoutLeftY + R} A ${R} ${R} 0 0 1 ${R} ${cutoutLeftY} L ${cutoutLeftX - R} ${cutoutLeftY} A ${R} ${R} 0 0 0 ${cutoutLeftX} ${cutoutLeftY - R} L ${cutoutLeftX} ${R} A ${R} ${R} 0 0 1 ${cutoutLeftX + R} 0 Z")`;
       setClipPath(path);
     };
 
     updateClipPath();
 
     let observer: ResizeObserver | null = null;
-    const navEl = document.querySelector('.nav-links');
-    if (navEl && window.ResizeObserver) {
+    const navElObserver = document.querySelector('.nav-links');
+    const logoElObserver = document.querySelector('.nav-logo');
+    
+    if (window.ResizeObserver) {
       observer = new ResizeObserver(updateClipPath);
-      observer.observe(navEl);
+      if (navElObserver) observer.observe(navElObserver);
+      if (logoElObserver) observer.observe(logoElObserver);
     }
     window.addEventListener('resize', updateClipPath);
 
@@ -95,6 +105,7 @@ use3dElement(
   return (
     <>
     <section className="hero" ref={heroRef}>
+
 
       <style>{`
         @import url('https://fonts.cdnfonts.com/css/ica-rubrik-black');
@@ -132,9 +143,9 @@ use3dElement(
           display: flex;
           flex-direction: column;
           justify-content: center;
-          align-items: center;
+          // align-items: center;
           gap: 0.5rem;
-          text-align: center;
+          // text-align: center; 
         }
         .hero-header p { 
          width: 75%; 
@@ -169,16 +180,44 @@ use3dElement(
           pointer-events: none;
         }
 
+        :root {
+          /* Adjust the original gallery size and position here */
+          --gallery-left: 20%;
+          --gallery-top: 1%;
+          --gallery-width: 12.5%;
+          --gallery-height: 15%;
+        }
+
+        .gallery-trigger, .flash-image-gallery-container {
+          position: fixed;
+          left: var(--gallery-left);
+          top: var(--gallery-top);
+          width: var(--gallery-width);
+          height: var(--gallery-height);
+          border-radius: 25px;
+        }
+
+        .gallery-trigger {
+          z-index: 200;
+          cursor: pointer;
+        }
+
         .flash-image-gallery-container {
-        position: fixed;
-        left: 15%;
-        top: 1%;
-        border-radius: 10px;
-        width: 40%;
-        height: 15%;
-        background-color: "transparent;
-        backdrop-filter: "blur(500px)";
-        // inset: 0;
+          background-color: transparent;
+          backdrop-filter: blur(75px);
+          z-index: 50;
+          transition: all 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+          overflow: hidden;
+          pointer-events: none;
+        }
+
+        .gallery-trigger:hover + .flash-image-gallery-container {
+          left: 0 !important;
+          top: 0 !important;
+          width: 100% !important;
+          height: 100svh !important;
+          border-radius: 0 !important;
+          z-index: 150 !important;
         }
       `}</style>
 
@@ -213,15 +252,13 @@ use3dElement(
         />
         {/* </div> */}
 
-        <div className="flash-image-gallery-container">
 
-        </div>
 
-        <div className="hero-header" style={{marginBottom: "20px"}}>
-          <h1>{info.creativeFirstName}</h1>
+        <div className="hero-header" style={{}}>
+          <div className="header-name" style={{textAlign: "center"}}><h1 style={{}}>{info.creativeFirstName}</h1></div>
           <p>{info.headline}</p>
 
-          <div className="engagment-button" style={{justifyContent: "end"}}>
+          <div className="engagment-button" style={{}}>
             <button> Hire Me </button>
             <button> Message Me </button>
           </div>
@@ -232,11 +269,20 @@ use3dElement(
         {/* ✅ container3D must have this id for the hook to find it */}
         <Qualification contentRef={contentRef} />
 
+        <div id="container3D" className="container3D" />
+
+        <div className="gallery-trigger"></div>
+        <div className="flash-image-gallery-container">
+          <FlashImageGallery 
+            images={['/imageFlash/1.jpg', '/imageFlash/2.jpg', '/imageFlash/3.jpg']} 
+            speedMs={400} 
+            transitionDurationMs={50} 
+          />
+        </div>
+
       </div>
 
     </section>
-
-        <div id="container3D" className="container3D" />
 
     </>
   );

@@ -37,7 +37,8 @@ export default function BasicNavigationBar() {
           paddingLeft: "0.5rem",
           paddingRight: "0.5rem",
           paddingTop: "0.75rem",}}>
-          <div className="nav-logo uppercase"> <a href=""> {info.name} </a> </div>
+          <div className="nav-logo uppercase" style={{backgroundColor: "tranparent", paddingLeft: "20px", paddingRight: "20px", paddingTop: "20px", paddingBottom: "20px", borderRadius: "15px",
+             backgroundImage: "linear-gradient( 120deg, rgb(0, 0, 0), rgb(0, 0, 0) )",}}> <a href=""> {info.name} </a> </div>
 
           <div className="nav-links flex gap-4" style={{backgroundColor: "tranparent", paddingLeft: "20px", paddingRight: "20px", paddingTop: "20px", paddingBottom: "20px", borderRadius: "15px",
              backgroundImage: "linear-gradient( 120deg, rgba(101, 11, 14, 1), rgba(101, 11, 14, 1) )",

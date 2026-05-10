@@ -31,7 +31,7 @@ export default function Home() {
     <div className="navbar-container"> 
         <BasicNavigationBar />
       </div>
-    <div className="heroSection">
+    <div className="heroSection" style={{backgroundColor: "#fff"}}>
       <Hero />
     </div>
     {/* <SplashScreen /> */}
