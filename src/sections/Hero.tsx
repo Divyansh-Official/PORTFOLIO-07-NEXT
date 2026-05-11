@@ -12,12 +12,21 @@ import FlashImageGallery from "../components/FlashImageGallery";
 
 export default function Hero() {
 
+  // const heroRef    = useRef<HTMLElement>(null);
+  // const canvasRef  = useRef<HTMLCanvasElement>(null);
+  // const contentRef = useRef<HTMLElement>(null);
+  // const canvasRefInteractiveBG = useFluidEffect();
+
+  // const [clipPath, setClipPath] = useState<string | undefined>(undefined);
+
   const heroRef    = useRef<HTMLElement>(null);
   const canvasRef  = useRef<HTMLCanvasElement>(null);
   const contentRef = useRef<HTMLElement>(null);
+  const headlineRef = useRef<HTMLParagraphElement>(null);
   const canvasRefInteractiveBG = useFluidEffect();
 
   const [clipPath, setClipPath] = useState<string | undefined>(undefined);
+  const [heroHeadlineText, setHeroHeadlineText] = useState(info.slogan);
 
   // use3dElement("container3D"); // ✅ call the hook
 
@@ -98,9 +107,63 @@ use3dElement(
       window.removeEventListener('resize', updateClipPath);
       if (observer) observer.disconnect();
     };
+  // }, []);
+
+  // useHeroAnimation(heroRef, canvasRef, contentRef);
+
+    }, []);
+
+  useEffect(() => {
+    const section = heroRef.current;
+    const headline = headlineRef.current;
+    const finalText = info.slogan;
+    const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&";
+    let revealInterval: ReturnType<typeof window.setInterval> | null = null;
+    let iteration = 0;
+
+    if (!section || !headline) return;
+
+    const startReveal = () => {
+      revealInterval = window.setInterval(() => {
+        setHeroHeadlineText(
+          finalText
+            .split("")
+            .map((char, index) => {
+              if (char === " ") return " ";
+              if (index < iteration) return finalText[index];
+              return letters[Math.floor(Math.random() * letters.length)];
+            })
+            .join("")
+        );
+
+        if (iteration >= finalText.length) {
+          if (revealInterval) window.clearInterval(revealInterval);
+          setHeroHeadlineText(finalText);
+        }
+
+        iteration += 0.5;
+      }, 32);
+    };
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        startReveal();
+        observer.disconnect();
+      },
+      { threshold: 0.35 }
+    );
+
+    observer.observe(section);
+
+    return () => {
+      observer.disconnect();
+      if (revealInterval) window.clearInterval(revealInterval);
+    };
   }, []);
 
   useHeroAnimation(heroRef, canvasRef, contentRef);
+
 
   return (
     <>
@@ -150,9 +213,30 @@ use3dElement(
         .hero-header p { 
          width: 75%; 
          }
-        .hero-header h1 {
+.engagment-button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 25rem;
+  margin: 1rem 0 0.75rem;
+}
 
-        }
+.engagment-button button {
+  padding: 0.85rem 1.45rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(24, 26, 31, 0.42);
+  color: #fff;
+  font-family: "Instrument Sans", sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12),
+              0 18px 45px rgba(0, 0, 0, 0.28);
+  cursor: pointer;
+}
+
         .hero-canvas { position: absolute; bottom: 0; width: 100%; height: 100%; pointer-events: none; }
         .hero-content {
           position: absolute;
@@ -184,7 +268,7 @@ use3dElement(
 
         :root {
           /* Adjust the original gallery size and position here */
-          --gallery-left: 20%;
+          --gallery-left: 14.1%;
           --gallery-top: 1%;
           --gallery-width: 12.5%;
           --gallery-height: 15%;
@@ -224,18 +308,6 @@ use3dElement(
       `}</style>
 
       <div className="hero-bg" style={clipPath ? { clipPath } : {}}>
-
-        {/* <div className="hero-img"> */}
-          {/* <Image
-            src={SectionData.hero.bgimage1}
-            alt="Hero Image"
-            fill
-            priority
-            sizes="100vw"
-            quality={75}
-            style={{ objectFit: 'cover' }}
-          /> */}
-
           <canvas
           ref={canvasRefInteractiveBG}
           style={{
@@ -252,18 +324,14 @@ use3dElement(
           data-priority="true"
           data-quality={75}
         />
-        {/* </div> */}
-
-
 
         <div className="hero-header" style={{}}>
           <div className="header-name" style={{textAlign: "center"}}><h1 style={{}}>{info.creativeFirstName}</h1></div>
-          <p>{info.headline}</p>
-
           <div className="engagment-button" style={{}}>
             <button> Hire Me </button>
             <button> Message Me </button>
           </div>
+            <p ref={headlineRef} aria-label={info.slogan}>{heroHeadlineText}</p>
         </div>
 
         <canvas className="hero-canvas" ref={canvasRef}></canvas>
