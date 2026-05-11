@@ -3,6 +3,7 @@
 import BasicNavigationBar from "@/src/components/nav/navBar";
 import StringProgressReveal from "@/src/components/StringProgressReveal";
 import PositionTracker from "@/src/components/trackers/PositionTracker";
+import { Qualifications } from "@/src/data/Qualifications.json";
 import Hero from "@/src/sections/Hero";
 import SplashScreen from "@/src/sections/Splash/SplashScreen01";
 import StackedSections from "@/src/sections/StackedSections";
@@ -28,15 +29,15 @@ export default function Home() {
         }
       `}
     </style>
-    <div className="navbar-container"> 
+    <div className="navbar"> 
         <BasicNavigationBar />
       </div>
     <div className="heroSection" style={{backgroundColor: "#fff"}}>
       <Hero />
     </div>
-    {/* <SplashScreen /> */}
-    {/* <StringProgressReveal /> */}
-    {/* <StackedSections /> */}
+    <div className="qualificationSection">
+      {/* <Qualifications /> */}
+    </div>
     <PositionTracker />
   </div>
   );

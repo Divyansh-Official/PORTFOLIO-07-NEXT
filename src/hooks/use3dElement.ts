@@ -25,9 +25,12 @@ export function use3dElement(
 
     const scene = new THREE.Scene();
 
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+
     const camera = new THREE.PerspectiveCamera(
       45,
-      window.innerWidth / window.innerHeight,
+      width / height,
       0.1,
       1000
     );
@@ -45,7 +48,7 @@ export function use3dElement(
     scene.add(pointLight);
 
     const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setSize(width, height);
     renderer.setPixelRatio(window.devicePixelRatio);
     container.appendChild(renderer.domElement);
 
@@ -103,8 +106,8 @@ export function use3dElement(
       if (!model) return;
 
       const scrollY = window.scrollY;
-      const pageHeight = document.body.scrollHeight - window.innerHeight;
-      const scrollFraction = pageHeight > 0 ? scrollY / pageHeight : 0; // 0 to 1
+      const maxScroll = Math.max(0, container.clientHeight - window.innerHeight);
+      const scrollFraction = maxScroll > 0 ? Math.min(scrollY / maxScroll, 1) : 0; // 0 to 1
 
       const speed = scroll.speed ?? 1;
 
@@ -126,9 +129,11 @@ export function use3dElement(
     window.addEventListener('scroll', handleScroll);
 
     const handleResize = () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
+      const w = container.clientWidth;
+      const h = container.clientHeight;
+      camera.aspect = w / h;
       camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setSize(w, h);
     };
     window.addEventListener('resize', handleResize);
 

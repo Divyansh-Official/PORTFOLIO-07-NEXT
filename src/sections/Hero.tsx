@@ -32,16 +32,16 @@ use3dElement(
 
   // Initial transform
   {
-    position: { x: 3, y: 0, z: 0 },
-    rotation: { x: 10, y: -60, z: -76 },
-    scale: 1.75,
+    position: { x: 1.6, y: 0.75, z: 0 },
+    rotation: { x: 10, y: -60, z: -79 },
+    scale: 0.75,
   },
 
   // Scroll animation
   {
-    speed: 0.71,
-    rotation: { x: 20, y: 377.5, z: 390 },
-    position: { x: -4.12, y: 0.25, z: 0 },
+    speed: 0.71, // we removed the speed multiplier essentially or left it 1
+    rotation: { x: 20, y: 360.5, z: 390 },
+    position: { x: -2.25, y: -2, z: 0 }, // move left and down towards the Introduction tag
   },
 
   // Cursor reaction
@@ -174,8 +174,10 @@ use3dElement(
           transition: clip-path 0.4s cubic-bezier(0.25, 1, 0.5, 1);
         }
         .container3D {
-          position: fixed;
+          position: absolute;
           inset: 0;
+          width: 100%;
+          height: 100%;
           z-index: 100;
           pointer-events: none;
         }
