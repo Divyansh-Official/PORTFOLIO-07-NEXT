@@ -65,7 +65,7 @@ const fragmentShader = `
 // ── Config ────────────────────────────────────────────────────────────────────
 
 // color: "#ebf5df", "#43202b", "#2E0D13"
-const CONFIG = { color: "#000000", spread: 0.5, speed: 1.5 };
+const CONFIG = { color: "#000000", spread: 0.5, speed: 2 };
 
 function hexToRgb(hex: string) {
   const r = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -120,8 +120,9 @@ export function useHeroAnimation(
     });
     scene.add(new THREE.Mesh(geometry, material));
 
-    let resizeTimer: ReturnType<typeof setTimeout>;
+    let resizeTimer: any;
     function resize() {
+      if (!hero) return;
       const w = hero.offsetWidth, h = hero.offsetHeight;
       renderer.setSize(w, h);
       renderer.setPixelRatio(1);  // Always 1× — shader is full-screen, 2× is ~4× GPU work

@@ -51,12 +51,6 @@ use3dElement(
     speed: 0.71, // we removed the speed multiplier essentially or left it 1
     rotation: { x: 20, y: 360.5, z: 390 },
     position: { x: -2.25, y: -2, z: 0 }, // move left and down towards the Introduction tag
-  },
-
-  // Cursor reaction
-  {
-    rotation: { x: 15, y: 25 }, // max tilt in degrees when cursor at screen edge
-    speed: 0.05,                 // lerp: 0.01 = very slow/floaty, 0.15 = snappy
   }
 );
 
@@ -118,7 +112,7 @@ use3dElement(
     const headline = headlineRef.current;
     const finalText = info.slogan;
     const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&";
-    let revealInterval: ReturnType<typeof window.setInterval> | null = null;
+    let revealInterval: any = null;
     let iteration = 0;
 
     if (!section || !headline) return;
@@ -311,14 +305,11 @@ use3dElement(
           <canvas
           ref={canvasRefInteractiveBG}
           style={{
-            objectFit: 'cover',
             position: "absolute",
-            top: "-150px",
+            top: 0,
             left: 0,
             width: "100%",
-            height: "100%",
-            inset: 0,
-            scale: 1.75
+            height: "100vh",
           }}
           data-sizes="100vw"
           data-priority="true"
@@ -339,16 +330,16 @@ use3dElement(
         {/* ✅ container3D must have this id for the hook to find it */}
         <Qualification contentRef={contentRef} />
 
-        <div id="container3D" className="container3D" />
+        {/* <div id="container3D" className="container3D" /> */}
 
         <div className="gallery-trigger"></div>
-        <div className="flash-image-gallery-container">
+        {/* <div className="flash-image-gallery-container">
           <FlashImageGallery 
             images={['/imageFlash/1.jpg', '/imageFlash/2.jpg', '/imageFlash/3.jpg']} 
             speedMs={400} 
             transitionDurationMs={50} 
           />
-        </div>
+        </div> */}
 
       </div>
 

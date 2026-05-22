@@ -68,11 +68,16 @@ const displayFragmentShader = `
 
     vec2 s = uResolution / textureSize;
 
+    // Normal cover scale
     float scale = max(s.x, s.y);
 
     vec2 scaledSize = textureSize * scale;
 
-    vec2 offset = (uResolution - scaledSize) * 0.5;
+    vec2 offset;
+    offset.x = (uResolution.x - scaledSize.x) * 0.5; // Center horizontally
+
+    // Always align to the top of the viewport so the face/hair is never cut off
+    offset.y = uResolution.y - scaledSize.y;
 
     return (uv * uResolution - offset) / scaledSize;
   }

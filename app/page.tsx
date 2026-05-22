@@ -32,8 +32,12 @@ export default function Home() {
     <div className="navbar"> 
         <BasicNavigationBar />
       </div>
-    <div className="heroSection" style={{backgroundColor: "#fff"}}>
-      <Hero />
+<div
+  className="heroSection"
+  style={{
+    background: "linear-gradient(to bottom, #ffffff 50%, #000000 50%)",
+  }}
+>      <Hero />
     </div>
     <div className="qualificationSection">
       <Qualifications />
