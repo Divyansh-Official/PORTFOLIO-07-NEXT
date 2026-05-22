@@ -51,7 +51,9 @@ const fragmentShader = `
     float aspect = uResolution.x / uResolution.y;
     vec2 centeredUv = (uv - 0.5) * vec2(aspect, 1.0);
 
-    float dissolveEdge = uv.y - uProgress * 1.2;
+    // Offset so at uProgress=0 it's fully transparent even with noise
+    // and at uProgress=1 it's fully opaque.
+    float dissolveEdge = uv.y + uSpread - uProgress * (1.0 + uSpread * 2.0);
     float noiseValue   = fbm(centeredUv * 15.0);
     float d            = dissolveEdge + noiseValue * uSpread;
 

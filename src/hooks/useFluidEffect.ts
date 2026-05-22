@@ -60,6 +60,8 @@ const displayFragmentShader = `
   uniform float uDpr;
   uniform vec2 uTopTextureSize;
   uniform vec2 uBottomTextureSize;
+  uniform float uBgScale;
+  uniform float uBgOffsetY;
 
   varying vec2 vUv;
 
@@ -67,19 +69,20 @@ const displayFragmentShader = `
     if (textureSize.x < 1.0 || textureSize.y < 1.0) return uv;
 
     vec2 s = uResolution / textureSize;
-
-    // Normal cover scale
     float scale = max(s.x, s.y);
+
+    // Apply user-controlled zoom (< 1.0 = zoom out, > 1.0 = zoom in)
+    scale *= uBgScale;
 
     vec2 scaledSize = textureSize * scale;
 
     vec2 offset;
     offset.x = (uResolution.x - scaledSize.x) * 0.5; // Center horizontally
 
-    // Always align to the top of the viewport so the face/hair is never cut off
-    offset.y = uResolution.y - scaledSize.y;
+    // Vertical position: 0.0 = top-aligned, 0.5 = centered, 1.0 = bottom-aligned
+    offset.y = (uResolution.y - scaledSize.y) * uBgOffsetY;
 
-    return (uv * uResolution - offset) / scaledSize;
+    return clamp((uv * uResolution - offset) / scaledSize, vec2(0.0), vec2(1.0));
   }
 
   void main() {
@@ -101,6 +104,23 @@ const displayFragmentShader = `
     gl_FragColor = finalColor;
   }
 `;
+
+// ─── Config ──────────────────────────────────────────────────────────────────
+// ✏️  TWEAK THESE VALUES to adjust how bg1 and bg2 are displayed:
+//
+//   BG_SCALE:          Controls zoom level.
+//                      1.0  = normal cover (fills viewport, may crop sides)
+//                      0.85 = slight zoom-out (shows more of the image)
+//                      1.85 = heavy zoom in
+//
+//   BG_OFFSET_Y_START: Vertical position at the TOP of scroll (before scrolling).
+//   BG_OFFSET_Y_END:   Vertical position at the BOTTOM of scroll (fully scrolled).
+//                      0.0 = top-aligned, 0.5 = centered, 1.0 = bottom-aligned
+//                      As you scroll, the image pans from START → END.
+//
+const BG_SCALE          = 1;
+const BG_OFFSET_Y_START = 1;   // top of image visible when page loads
+const BG_OFFSET_Y_END   = 2;   // bottom of image visible when fully scrolled
 
 // ─── Hook ────────────────────────────────────────────────────────────────────
 
@@ -150,8 +170,8 @@ export function useFluidEffect() {
     let currentTarget = 0;
 
     // ── Placeholder textures ───────────────────────────────────────────────
-    const topTexture = createPlaceholderTexture("#ea1b23");
-    const bottomTexture = createPlaceholderTexture("#006fb9");
+    const topTexture = createPlaceholderTexture("#000000");
+    const bottomTexture = createPlaceholderTexture("#000000");
 
     const topTextureSize = new THREE.Vector2(1, 1);
     const bottomTextureSize = new THREE.Vector2(1, 1);
@@ -181,6 +201,8 @@ export function useFluidEffect() {
         uDpr: { value: window.devicePixelRatio },
         uTopTextureSize: { value: topTextureSize },
         uBottomTextureSize: { value: bottomTextureSize },
+        uBgScale: { value: BG_SCALE },
+        uBgOffsetY: { value: BG_OFFSET_Y_START },
       },
       vertexShader,
       fragmentShader: displayFragmentShader,
@@ -270,6 +292,19 @@ export function useFluidEffect() {
     window.addEventListener("touchmove", onTouchMove, { passive: false });
     window.addEventListener("resize", onWindowResize);
 
+    // ── Scroll-driven vertical pan ──────────────────────────────────────
+    let scrollFraction = 0;
+
+    function onScroll() {
+      const hero = canvas!.closest('.hero') as HTMLElement | null;
+      if (!hero) return;
+      const maxScroll = hero.offsetHeight - window.innerHeight;
+      if (maxScroll <= 0) return;
+      scrollFraction = Math.min(Math.max(window.scrollY / maxScroll, 0), 1);
+    }
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll(); // set initial value
+
     // ── Animation loop ─────────────────────────────────────────────────────
     let rafId: number;
 
@@ -279,6 +314,10 @@ export function useFluidEffect() {
       if (isMoving && performance.now() - lastMoveTime > 50) {
         isMoving = false;
       }
+
+      // Lerp vertical offset based on scroll
+      const targetOffsetY = BG_OFFSET_Y_START + (BG_OFFSET_Y_END - BG_OFFSET_Y_START) * scrollFraction;
+      displayMaterial.uniforms.uBgOffsetY.value = targetOffsetY;
 
       const prevTarget = pingPongTargets[currentTarget];
       currentTarget = (currentTarget + 1) % 2;

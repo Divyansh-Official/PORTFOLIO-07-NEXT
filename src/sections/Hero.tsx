@@ -10,6 +10,48 @@ import { use3dElement } from "../hooks/use3dElement"; // ✅ import
 import { useFluidEffect } from "../hooks/useFluidEffect";
 import FlashImageGallery from "../components/FlashImageGallery";
 
+const GlassButton = ({ children }: { children: React.ReactNode }) => {
+  const handleMouseMove = (e: React.MouseEvent<HTMLButtonElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    // Add highlight effect
+    const specular = e.currentTarget.querySelector('.glass-specular') as HTMLElement;
+    if (specular) {
+      specular.style.background = `radial-gradient(
+        circle at ${x}px ${y}px,
+        rgba(255,255,255,0.15) 0%,
+        rgba(255,255,255,0.05) 30%,
+        rgba(255,255,255,0) 60%
+      )`;
+    }
+  };
+
+  const handleMouseLeave = (e: React.MouseEvent<HTMLButtonElement>) => {
+    const filter = document.querySelector('#glass-distortion feDisplacementMap');
+    if (filter) {
+      filter.setAttribute('scale', '77');
+    }
+    
+    const specular = e.currentTarget.querySelector('.glass-specular') as HTMLElement;
+    if (specular) {
+      specular.style.background = 'none';
+    }
+  };
+
+  return (
+    <button className="glass-button" onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}>
+      <div className="glass-filter"></div>
+      <div className="glass-overlay"></div>
+      <div className="glass-specular"></div>
+      <div className="glass-content">
+        <span>{children}</span>
+      </div>
+    </button>
+  );
+};
+
 export default function Hero() {
 
   // const heroRef    = useRef<HTMLElement>(null);
@@ -200,35 +242,110 @@ use3dElement(
           display: flex;
           flex-direction: column;
           justify-content: center;
-          // align-items: center;
+          align-items: center; /* Center the buttons */
           gap: 0.5rem;
-          // text-align: center; 
         }
-        .hero-header p { 
-         width: 75%; 
-         }
+        
+        .header-name {
+          position: absolute;
+          left: 5%; /* Position on the left side like the reference */
+          top: 45px;
+          height: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 5;
+          pointer-events: none;
+        }
+
+        .header-name h1 {
+          font-family: 'ICA Rubrik', 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
+          font-weight: 900;
+          font-size: clamp(4rem, 12vh, 12rem);
+          color: transparent;
+          -webkit-text-stroke: 2px rgba(255, 255, 255, 0.85);
+          writing-mode: vertical-rl;
+          text-orientation: upright; /* Keeps Japanese upright, English stacks vertically */
+          line-height: 0.85;
+          letter-spacing: -0.05em;
+          margin: 0;
+          white-space: nowrap;
+        }
 .engagment-button {
   display: flex;
   justify-content: center;
   align-items: center;
   gap: 25rem;
   margin: 1rem 0 0.75rem;
+  z-index: 10; /* keep it above everything */
 }
 
-.engagment-button button {
-  padding: 0.85rem 1.45rem;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  background: rgba(24, 26, 31, 0.42);
-  color: #fff;
-  font-family: "Instrument Sans", sans-serif;
-  font-size: 1rem;
-  font-weight: 600;
-  backdrop-filter: blur(22px);
-  -webkit-backdrop-filter: blur(22px);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12),
-              0 18px 45px rgba(0, 0, 0, 0.28);
+/* Glass Button Container */
+.glass-button {
+  --bg-color: rgba(255, 255, 255, 0.25);
+  --highlight: rgba(255, 255, 255, 0.75);
+  --text: #ffffff;
+  
+  position: relative;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 999px; /* Make it more pill shaped like previous buttons */
   cursor: pointer;
+  overflow: hidden;
+  background: transparent;
+  transition: transform 0.2s ease;
+  outline: none;
+}
+
+.glass-button:hover {
+  transform: scale(1.05);
+}
+
+.glass-button:active {
+  transform: scale(0.95);
+}
+
+.glass-filter,
+.glass-overlay,
+.glass-specular {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none; /* Make sure mouse events pass through to button */
+}
+
+.glass-filter {
+  z-index: 1;
+  backdrop-filter: blur(4px);
+  filter: url(#glass-distortion) saturate(120%) brightness(1.15);
+}
+
+.glass-overlay {
+  z-index: 2;
+  background: var(--bg-color);
+}
+
+.glass-specular {
+  z-index: 3;
+  box-shadow: inset 1px 1px 1px var(--highlight);
+  transition: background 0.1s ease;
+}
+
+.glass-content {
+  position: relative;
+  z-index: 4;
+  color: var(--text);
+  font-family: "Instrument Sans", sans-serif;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+/* Dark mode styles */
+@media (prefers-color-scheme: dark) {
+  .glass-button {
+    --bg-color: rgba(0, 0, 0, 0.25);
+    --highlight: rgba(255, 255, 255, 0.15);
+  }
 }
 
         .hero-canvas { position: absolute; bottom: 0; width: 100%; height: 100%; pointer-events: none; }
@@ -301,6 +418,13 @@ use3dElement(
         }
       `}</style>
 
+      <svg style={{ display: "none" }}>
+        <filter id="glass-distortion">
+          <feTurbulence type="turbulence" baseFrequency="0.008" numOctaves="2" result="noise" />
+          <feDisplacementMap in="SourceGraphic" in2="noise" scale="77" />
+        </filter>
+      </svg>
+
       <div className="hero-bg" style={clipPath ? { clipPath } : {}}>
           <canvas
           ref={canvasRefInteractiveBG}
@@ -316,11 +440,13 @@ use3dElement(
           data-quality={75}
         />
 
-        <div className="hero-header" style={{}}>
-          <div className="header-name" style={{textAlign: "center"}}><h1 style={{}}>{info.creativeFirstName}</h1></div>
+        <div className="hero-header">
+          <div className="header-name">
+            <h1>{info.creativeFirstName}</h1>
+          </div>
           <div className="engagment-button" style={{}}>
-            <button> Hire Me </button>
-            <button> Contact </button>
+            <GlassButton> Hire Me </GlassButton>
+            <GlassButton> Contact </GlassButton>
           </div>
             <p ref={headlineRef} aria-label={info.slogan}>{heroHeadlineText}</p>
         </div>
