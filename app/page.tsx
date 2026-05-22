@@ -29,7 +29,7 @@ export default function Home() {
       `}
     </style>
     <div className="navbar"> 
-        <BasicNavigationBar />
+        {/* <BasicNavigationBar /> */}
       </div>
     <div className="heroSection" style={{backgroundColor: "#000"}}>
       {/* <div

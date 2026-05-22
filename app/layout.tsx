@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { anurati } from "./fonts";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -35,7 +36,8 @@ export default function RootLayout({
     rel="stylesheet"
   />
 </head>
-      <body className="min-h-full flex flex-col">{children}</body>
-    </html>
+<body className={`${anurati.variable} ${geistSans.variable} ${geistMono.variable} min-h-full flex flex-col`}>
+  {children}
+</body>    </html>
   );
 }

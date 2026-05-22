@@ -26,17 +26,19 @@ export default function BasicNavigationBar() {
         `}
       </style>
 
-        <nav className="w-full top-0 left-0 p-2 flex justify-between gap-10 z-[2]" style={{position: "fixed",
+        <nav className=" w-full top-0 left-0 p-2 flex justify-between gap-10 z-[2]" style={{position: "fixed",
           top: 0,
           left: 0,
           width: "100%",
           display: "flex",
+          // backgroundColor: "yellow",
           justifyContent: "space-between",
           alignItems: "center",
           gap: "2.5rem",
           paddingLeft: "0.5rem",
           paddingRight: "0.5rem",
-          paddingTop: "0.75rem",}}>
+          paddingTop: "0.5rem",
+          paddingBottom: "0.5rem"}}>
           <div className="nav-logo uppercase" style={{backgroundColor: "tranparent", paddingLeft: "20px", paddingRight: "20px", paddingTop: "20px", paddingBottom: "20px", borderRadius: "15px",
              backgroundImage: "linear-gradient( 120deg, rgb(0, 0, 0), rgb(0, 0, 0) )",}}> <a href=""> {info.name} </a> </div>
 

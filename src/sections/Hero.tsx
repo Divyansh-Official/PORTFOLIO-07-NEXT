@@ -416,7 +416,21 @@ use3dElement(
           border-radius: 0 !important;
           z-index: 150 !important;
         }
+
+        .heroSlogan {
+        font-family: var(--font-anurati);
+        position: absolute;
+        bottom: 3rem;
+         left: 50%;
+  transform: translateX(-50%);
+
+  text-align: center;
+  letter-spacing: 0.2em;
+  font-size: 1.5rem;
+        }
       `}</style>
+
+      <BasicNavigationBar />
 
       <svg style={{ display: "none" }}>
         <filter id="glass-distortion">
@@ -448,7 +462,7 @@ use3dElement(
             <GlassButton> Hire Me </GlassButton>
             <GlassButton> Contact </GlassButton>
           </div>
-            <p ref={headlineRef} aria-label={info.slogan}>{heroHeadlineText}</p>
+            <p className="heroSlogan" ref={headlineRef} aria-label={info.slogan}>{heroHeadlineText}</p>
         </div>
 
         <canvas className="hero-canvas" ref={canvasRef}></canvas>
