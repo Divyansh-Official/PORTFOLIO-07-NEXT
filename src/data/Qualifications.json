@@ -2,5 +2,25 @@
     "University": "Chandigarh University",
     "Degree": "B.Tech in Computer Science and Engineering",
     "Year": "2022-2026",
-    "UniversityWebsite": "https://www.cuchd.in/"
+    "UniversityWebsite": "https://www.cuchd.in/",
+
+    "label": "学歴",
+    "kicker": "Education",
+    "title": "Qualifications",
+    "subtitle": "Where the foundations were laid.",
+    "timeline": [
+        {
+            "year": "2022 — 2026",
+            "title": "B.Tech, Computer Science & Engineering",
+            "org": "Chandigarh University",
+            "detail": "Core computer science — data structures, databases, operating systems, distributed systems and software engineering.",
+            "href": "https://www.cuchd.in/"
+        },
+        {
+            "year": "2020 — 2022",
+            "title": "Senior Secondary — PCM + Computer Science",
+            "org": "CBSE",
+            "detail": "Mathematics, physics and an early start in programming that set the direction."
+        }
+    ]
 }

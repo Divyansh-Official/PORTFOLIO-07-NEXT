@@ -119,8 +119,11 @@ const displayFragmentShader = `
 //                      As you scroll, the image pans from START → END.
 //
 const BG_SCALE          = 1;
-const BG_OFFSET_Y_START = 1;   // top of image visible when page loads
-const BG_OFFSET_Y_END   = 2;   // bottom of image visible when fully scrolled
+// Cover-centered, no internal pan. The canvas now spans the WHOLE hero and
+// scrolls with it, so the parallax comes for free — and keeping the offset in
+// [0,1] avoids the clamped edge-band the old 1→2 range produced.
+const BG_OFFSET_Y_START = 0.5;
+const BG_OFFSET_Y_END   = 0.5;
 
 // ─── Hook ────────────────────────────────────────────────────────────────────
 
@@ -131,6 +134,13 @@ export function useFluidEffect() {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
+    // The background must span the FULL hero (175svh), not a single viewport,
+    // so the scroll-in black dissolve always has image directly beneath it —
+    // no gap / empty strip between the image and the shader.
+    const heroEl = canvas.closest(".hero") as HTMLElement | null;
+    const getW = () => window.innerWidth;
+    const getH = () => (heroEl && heroEl.offsetHeight ? heroEl.offsetHeight : window.innerHeight);
+
     // ── Renderer / Scene / Camera ──────────────────────────────────────────
     const renderer = new THREE.WebGLRenderer({
       canvas,
@@ -138,8 +148,8 @@ export function useFluidEffect() {
       precision: "highp",
     });
 
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(getW(), getH());
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
 
     const scene = new THREE.Scene();
     const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
@@ -196,7 +206,7 @@ export function useFluidEffect() {
         uTopTexture: { value: topTexture },
         uBottomTexture: { value: bottomTexture },
         uResolution: {
-          value: new THREE.Vector2(window.innerWidth, window.innerHeight),
+          value: new THREE.Vector2(getW(), getH()),
         },
         uDpr: { value: window.devicePixelRatio },
         uTopTextureSize: { value: topTextureSize },
@@ -278,12 +288,9 @@ export function useFluidEffect() {
     }
 
     function onWindowResize() {
-      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setSize(getW(), getH());
 
-      displayMaterial.uniforms.uResolution.value.set(
-        window.innerWidth,
-        window.innerHeight
-      );
+      displayMaterial.uniforms.uResolution.value.set(getW(), getH());
 
       displayMaterial.uniforms.uDpr.value = window.devicePixelRatio;
     }
@@ -305,11 +312,21 @@ export function useFluidEffect() {
     window.addEventListener("scroll", onScroll, { passive: true });
     onScroll(); // set initial value
 
+    // ── Pause GL work when the hero is scrolled out of view / tab hidden ────
+    let visible = true;
+    const io = new IntersectionObserver(
+      ([entry]) => { visible = entry.isIntersecting; },
+      { threshold: 0 }
+    );
+    io.observe(canvas);
+
     // ── Animation loop ─────────────────────────────────────────────────────
     let rafId: number;
 
     function animate() {
       rafId = requestAnimationFrame(animate);
+
+      if (!visible || document.hidden) return;
 
       if (isMoving && performance.now() - lastMoveTime > 50) {
         isMoving = false;
@@ -342,9 +359,11 @@ export function useFluidEffect() {
     // ── Cleanup ────────────────────────────────────────────────────────────
     return () => {
       cancelAnimationFrame(rafId);
+      io.disconnect();
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("touchmove", onTouchMove);
       window.removeEventListener("resize", onWindowResize);
+      window.removeEventListener("scroll", onScroll);
       pingPongTargets[0].dispose();
       pingPongTargets[1].dispose();
       planeGeometry.dispose();

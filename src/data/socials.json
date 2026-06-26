@@ -1,0 +1,8 @@
+{
+    "items": [
+        { "label": "GitHub",   "handle": "@Divyansh-Official",        "href": "https://github.com/Divyansh-Official" },
+        { "label": "LinkedIn", "handle": "Divyansh Tiwari",           "href": "https://www.linkedin.com/in/divyanshtiwari" },
+        { "label": "Email",    "handle": "iamdivyanshtiwari@gmail.com", "href": "mailto:iamdivyanshtiwari@gmail.com" },
+        { "label": "X",        "handle": "@divyansh",                 "href": "https://x.com/" }
+    ]
+}

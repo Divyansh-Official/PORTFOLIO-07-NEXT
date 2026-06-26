@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect } from "react";
-import Hero from "../Hero";
 import info from "../../data/information.json";
 import loader from "../../lottieFiles/Loader.json";
 import server from "../../lottieFiles/Server.json";
@@ -207,100 +206,49 @@ export default function SplashScreen01() {
       const exitTl = gsap.timeline();
 
       exitTl
-        // Step 1 ── scale preloader down (reveals the hero section below)
-        .to(".preloader", {
-          scale:    0.75,
-          duration: 1.25,
-          ease:     "hop",
-        })
-
-        // Step 2 ── sweep both rings off-screen in the negative direction
+        // Step 1 ── button flourish: sweep the rings off-screen
         .to(
           [btnOutlineTrack, btnOutlineProgress],
           {
-            strokeDashoffset: -svgPathLength, // negative → dash shoots past zero
-            duration:         1.25,
+            strokeDashoffset: -svgPathLength,
+            duration:         1.1,
             ease:             "hop",
           },
-          "<", // overlap with scale-down
         )
 
-        // Step 3a ── "ENGAGE" text exits upward
-        .to(
-          "#pbc-label .line",
-          {
-            y:        "-100%",
-            duration: 0.75,
-            ease:     "power3.out",
-          },
-          "-=1.25",
-        )
+        // Step 2 ── "CLICK TO ENGAGE" exits up, "INITIALIZED" enters
+        .to("#pbc-label .line",       { y: "-100%", duration: 0.6, ease: "power3.out" }, "-=1.0")
+        .to("#pbc-outro-label .line", { y: "0%",    duration: 0.6, ease: "power3.out" }, "-=0.6")
 
-        // Step 3b ── "INITIALIZATION COMPLETED" text enters from below
-        .to(
-          "#pbc-outro-label .line",
-          {
-            y:        "0%",
-            duration: 0.75,
-            ease:     "power3.out",
-          },
-          "-=0.75",
-        )
+        // Step 3 ── hide the white backdrop *behind* the still-opaque preloader,
+        // so the hero fades up from black — never a white flash.
+        .set(".preloader-backdrop", { autoAlpha: 0 })
 
-        // Step 4 ── clip-path wipe: preloader slides out to the left
-        // polygon goes from full-width rectangle → zero-width rectangle
-        .to(".preloader", {
-          clipPath: "polygon(0% 0%, 0% 0%, 0% 100%, 0% 100%)",
-          duration: 1.5,
-          ease:     "hop",
-        })
-
-        // Step 5 ── hero revealer (white overlay) wipes away in sync with preloader
+        // Step 4 ── fade the (black) preloader out → the hero fades into view.
         .to(
-          ".preloader-revealer",
+          ".preloader",
           {
-            clipPath: "polygon(0% 0%, 0% 0%, 0% 100%, 0% 100%)",
-            duration: 1.5,
-            ease:     "hop",
+            autoAlpha: 0,
+            duration:  1.1,
+            ease:      "power2.inOut",
             onComplete: () => {
-              // Remove the preloader from the layout entirely once hidden,
-              // so it no longer intercepts pointer events.
+              // Drop it from layout so it no longer intercepts pointer events.
               gsap.set(".preloader", { display: "none" });
             },
           },
-          "-=1.45", // nearly identical timing to the preloader wipe
+          "+=0.15",
         )
 
-        // Step 6 ── hero scales from 0.75 (set in CSS) back to full size
-        // .to(".hero", {
-        //   scale:    1,
-        //   duration: 1.25,
-        //   ease:     "hop",
-        // })
-        .to(".hero-stage", {
-  scale:    1,
-  duration: 1.25,
-  ease:     "hop",
-  onComplete: () => {
-    const stage = document.querySelector(".hero-stage") as HTMLElement;
-    if (stage) {
-      stage.style.position = "relative"; // release from fixed
-      stage.style.overflow = "visible";  // let sections scroll freely
-      stage.style.height   = "auto";
-    }
-  },
-})
-
-        // Step 7 ── headline words cascade up from behind their word-masks
+        // Step 5 ── headline words cascade up as the hero settles in.
         .to(
           ".hero h1 .word",
           {
             y:        "0%",
             duration: 1,
             ease:     "glide",
-            stagger:  0.05, // each word follows 50 ms after the previous
+            stagger:  0.05,
           },
-          "-=1.75", // starts well before the hero scale finishes for overlap
+          "-=0.7",
         );
     };
 
@@ -365,7 +313,7 @@ export default function SplashScreen01() {
           position: fixed;
           width: 100%;
           height: 100%;
-          background-color: var(--base-100);
+          background-color: var(--base-300);
           color: var(--base-200);
           display: flex;
           flex-direction: column;
@@ -484,16 +432,14 @@ export default function SplashScreen01() {
           // z-index: 1;
           // }
 
-          .preloader-revealer {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: var(--base-100);
-  clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%);
-  will-change: clip-path;
-}
+          /* Hero lives BELOW the preloader (z-index: 2) and is its own stacking
+             context, so the fixed nav (z-index: 1000) and katana (z-index: 100)
+             can no longer bleed over the splash. It stays fully hidden until the
+             preloader fades away on ENGAGE. */
+          .hero-stage {
+            position: relative;
+            z-index: 1;
+          }
 
 .hero h1 {
   width: 90%;
@@ -634,15 +580,12 @@ export default function SplashScreen01() {
         </div>
       </div>
 
-      {/* ── Hero section (z-index: 1) ──────────────────────────────────────────
-          Starts scaled to 0.75 (set in CSS). The preloader-revealer child acts
-          as a white clipping mask that wipes away simultaneously with the
-          preloader panel during the exit sequence. */}
-      {/* <section className="hero z-1"> <Hero /> </section> */}
-      <div className="hero-stage" style={{ position: "relative" }}>
-  <div className="preloader-revealer" />
-  <StackedSections />
-</div>
+      {/* ── Hero + sections (z-index: 1, below the preloader) ──────────────────
+          Fully hidden behind the splash while it plays; fades up from black
+          when the preloader fades out on ENGAGE. */}
+      <div className="hero-stage">
+        <StackedSections />
+      </div>
 
     </div>
   );

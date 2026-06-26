@@ -3,6 +3,8 @@
     "img": "https://media.licdn.com/dms/image/v2/D5603AQH06YOVuO862w/profile-displayphoto-scale_400_400/B56Z0lsNiYJwAg-/0/1774453872658?e=1779321600&v=beta&t=5YyUVXVpYcgfhALx_2qi3vmtqb85iJFixlkUaBcw2nc",
     "role": "Software Engineer",
     "location": "Chandigarh, India",
+    "email": "iamdivyanshtiwari@gmail.com",
+    "availability": "Open to opportunities",
     "headline": "Native App Developer | Databases [ MySQL, MongoDB, SQLite ] | Spring Boot | Gradle | Rest API | Git | Firebase",
     "slogan": "WELCOME _ TO _ THE _ RED _ ZONE",
 
@@ -16,5 +18,8 @@
 
     "creativeSlogan01": "Ideate",
     "creativeSlogan02": "Develop",
-    "creativeSlogan03": "Dominate"
+    "creativeSlogan03": "Dominate",
+
+    "ctaPrimary": { "label": "Hire Me", "href": "mailto:iamdivyanshtiwari@gmail.com" },
+    "ctaSecondary": { "label": "Contact", "href": "#contact" }
 }

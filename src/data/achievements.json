@@ -1,0 +1,32 @@
+{
+    "label": "実績",
+    "kicker": "Recognition",
+    "title": "Achievements",
+    "subtitle": "Milestones worth pinning to the board.",
+    "items": [
+        {
+            "year": "2026",
+            "title": "B.Tech, Computer Science & Engineering",
+            "org": "Chandigarh University",
+            "detail": "Graduating 2026 with a focus on software systems, databases and distributed design."
+        },
+        {
+            "year": "2025",
+            "title": "Shipped QuickLocal — Production Backend",
+            "org": "Independent",
+            "detail": "Designed and delivered a hyperlocal delivery platform: fee engine, PostGIS search, Kafka + outbox, Razorpay."
+        },
+        {
+            "year": "2025",
+            "title": "AI Helpdesk Integration",
+            "org": "QuickLocal",
+            "detail": "Wired context-aware LLM support into the platform via OpenRouter with graceful fallbacks and rate limiting."
+        },
+        {
+            "year": "2024",
+            "title": "Open-Source & Hackathons",
+            "org": "Community",
+            "detail": "Contributed to and built rapid prototypes — backend tooling, native app experiments, and creative web."
+        }
+    ]
+}

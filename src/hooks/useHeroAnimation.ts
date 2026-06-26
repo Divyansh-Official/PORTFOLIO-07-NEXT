@@ -98,6 +98,8 @@ export function useHeroAnimation(
       syncTouch: true,      // bypass expensive touch smoothing
       touchMultiplier: 1.5, // responsive touch scrolling
     });
+    // Expose Lenis so the nav (and anything else) can smooth-scroll to anchors.
+    (window as Window & { __lenis?: Lenis }).__lenis = lenis;
     const lenisHandler = (time: number) => lenis.raf(time * 1000);
     gsap.ticker.add(lenisHandler);
     gsap.ticker.lagSmoothing(0);
@@ -209,6 +211,9 @@ export function useHeroAnimation(
       gsap.ticker.remove(threeHandler);
       clearTimeout(resizeTimer);
       window.removeEventListener("resize", debouncedResize);
+      if ((window as Window & { __lenis?: Lenis }).__lenis === lenis) {
+        delete (window as Window & { __lenis?: Lenis }).__lenis;
+      }
       lenis.destroy();
       wordST.kill();
       split.revert();

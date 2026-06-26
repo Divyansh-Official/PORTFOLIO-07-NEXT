@@ -49,7 +49,7 @@ export function use3dElement(
 
     const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
     renderer.setSize(width, height);
-    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     container.appendChild(renderer.domElement);
 
     // Track base transform after model loads
@@ -137,15 +137,25 @@ export function use3dElement(
     };
     window.addEventListener('resize', handleResize);
 
+    // Pause rendering when the host is scrolled out of view / tab hidden.
+    let visible = true;
+    const io = new IntersectionObserver(
+      ([entry]) => { visible = entry.isIntersecting; },
+      { threshold: 0 }
+    );
+    io.observe(container);
+
     let animId: number;
     const reRender3D = () => {
       animId = requestAnimationFrame(reRender3D);
+      if (!visible || document.hidden) return;
       renderer.render(scene, camera);
     };
     reRender3D();
 
     return () => {
       cancelAnimationFrame(animId);
+      io.disconnect();
       window.removeEventListener('scroll', handleScroll);
       window.removeEventListener('resize', handleResize);
       renderer.dispose();

@@ -1,0 +1,68 @@
+{
+    "label": "制作実績",
+    "kicker": "Selected work",
+    "title": "Projects",
+    "subtitle": "Systems I have designed, built, and shipped — backend-first, end to end.",
+    "items": [
+        {
+            "id": "quicklocal",
+            "index": "01",
+            "name": "QuickLocal",
+            "nameJp": "クイックローカル",
+            "year": "2025",
+            "role": "Backend Engineer",
+            "category": "Hyperlocal Commerce",
+            "description": "A production-grade hyperlocal delivery platform backend. Distance-based fee engine, vendor free-delivery thresholds, PostGIS shop-search, transactional outbox for reliable events, and a Razorpay payment flow.",
+            "stack": ["Spring Boot", "PostGIS", "Apache Kafka", "Razorpay", "MySQL"],
+            "image": "/images/1.png",
+            "accent": "#e60012",
+            "featured": true,
+            "links": { "live": "", "repo": "" }
+        },
+        {
+            "id": "quicklocal-mobile",
+            "index": "02",
+            "name": "QuickLocal Mobile",
+            "nameJp": "モバイルアプリ",
+            "year": "2026",
+            "role": "Mobile Developer",
+            "category": "React Native App",
+            "description": "The customer-facing app for QuickLocal — live order tracking on a map, location-aware shop feed, and a blue-themed design system with Reanimated + Lottie micro-interactions.",
+            "stack": ["React Native", "Reanimated", "NativeWind", "Lottie"],
+            "image": "/images/2.png",
+            "accent": "#ff2d3f",
+            "featured": false,
+            "links": { "live": "", "repo": "" }
+        },
+        {
+            "id": "ai-helpdesk",
+            "index": "03",
+            "name": "AI Helpdesk",
+            "nameJp": "AIヘルプデスク",
+            "year": "2025",
+            "role": "Full-Stack",
+            "category": "LLM Integration",
+            "description": "An AI support module wired into the QuickLocal stack via OpenRouter free models — context-aware answers over orders, vendors, and delivery, with graceful fallbacks and rate limiting.",
+            "stack": ["OpenRouter", "Spring Boot", "REST APIs", "Redis"],
+            "image": "/imageFlash/1.jpg",
+            "accent": "#e60012",
+            "featured": false,
+            "links": { "live": "", "repo": "" }
+        },
+        {
+            "id": "portfolio",
+            "index": "04",
+            "name": "This Portfolio",
+            "nameJp": "ポートフォリオ",
+            "year": "2026",
+            "role": "Design & Build",
+            "category": "Creative Web",
+            "description": "The site you are reading — Next.js 16 + React 19 with raw WebGL shaders, a fluid cursor field, a GSAP dissolve reveal, a scroll-driven 3D katana, and clip-path choreography.",
+            "stack": ["Next.js", "Three.js", "GSAP", "Lenis", "Tailwind"],
+            "image": "/imageFlash/2.jpg",
+            "accent": "#ff2d3f",
+            "featured": false,
+            "links": { "live": "", "repo": "https://github.com/Divyansh-Official/PORTFOLIO-07-NEXT" }
+        }
+    ]
+}

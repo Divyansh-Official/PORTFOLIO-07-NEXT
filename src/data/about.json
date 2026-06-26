@@ -1,0 +1,16 @@
+{
+    "label": "私について",
+    "kicker": "About",
+    "title": "About",
+    "lead": "I'm Divyansh — a software engineer who lives at the seam between robust backends and interfaces people actually enjoy using.",
+    "paragraphs": [
+        "I build production systems end to end: distance-based fee engines, PostGIS geo-search, event-driven pipelines with Kafka and a transactional outbox, and the native apps that sit on top of them.",
+        "My happy place is the hard middle — data models, money math, reliability — but I care just as much about how the final thing feels in your hand."
+    ],
+    "stats": [
+        { "value": "4+", "label": "Years writing code" },
+        { "value": "10+", "label": "Projects shipped" },
+        { "value": "∞", "label": "Cups of chai" }
+    ],
+    "tags": ["Backend Systems", "Native Apps", "Distributed Systems", "Creative Web"]
+}

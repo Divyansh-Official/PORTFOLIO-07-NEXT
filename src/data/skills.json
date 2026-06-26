@@ -1,0 +1,54 @@
+{
+    "label": "技術スタック",
+    "kicker": "What I build with",
+    "title": "Skills",
+    "subtitle": "A backend-leaning, full-stack toolkit — from Spring Boot services to native mobile apps.",
+    "marquee": [
+        "Spring Boot",
+        "React Native",
+        "Java",
+        "Kotlin",
+        "TypeScript",
+        "PostGIS",
+        "Apache Kafka",
+        "MongoDB",
+        "MySQL",
+        "Firebase",
+        "Gradle",
+        "Docker",
+        "REST APIs",
+        "Git"
+    ],
+    "categories": [
+        {
+            "name": "Languages",
+            "nameJp": "言語",
+            "items": ["Java", "Kotlin", "TypeScript", "JavaScript", "SQL"]
+        },
+        {
+            "name": "Backend",
+            "nameJp": "バックエンド",
+            "items": ["Spring Boot", "REST APIs", "Gradle", "Apache Kafka", "Razorpay"]
+        },
+        {
+            "name": "Mobile",
+            "nameJp": "モバイル",
+            "items": ["React Native", "Android (Native)", "Reanimated", "NativeWind"]
+        },
+        {
+            "name": "Databases",
+            "nameJp": "データベース",
+            "items": ["MySQL", "MongoDB", "SQLite", "PostGIS", "Redis"]
+        },
+        {
+            "name": "Tooling & Cloud",
+            "nameJp": "ツール",
+            "items": ["Git", "Docker", "Firebase", "Flyway", "Vercel"]
+        },
+        {
+            "name": "Frontend",
+            "nameJp": "フロントエンド",
+            "items": ["Next.js", "React", "Three.js", "GSAP", "Tailwind"]
+        }
+    ]
+}
