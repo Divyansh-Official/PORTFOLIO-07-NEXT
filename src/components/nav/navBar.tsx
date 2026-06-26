@@ -37,7 +37,7 @@ export default function BasicNavigationBar() {
           justify-content: space-between;
           align-items: center;
           gap: 1rem;
-          padding: 0.6rem 0.75rem;
+          padding: 0.75rem; /* 12px all round → equal outer-side & top spacing, matches clip-path GAP */
           z-index: 1000;
         }
         .nav-logo {

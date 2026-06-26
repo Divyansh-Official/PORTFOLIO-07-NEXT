@@ -36,16 +36,19 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-<head>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-  <link
-    href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@800&family=Geist+Mono:wght@500&family=Instrument+Sans:wght@400..700&family=Instrument+Serif:ital@0;1&family=Shippori+Mincho+B1:wght@500;700;800&family=Noto+Sans+JP:wght@400;700&display=swap"
-    rel="stylesheet"
-  />
-</head>
-<body className={`${anurati.variable} ${geistSans.variable} ${geistMono.variable} min-h-full flex flex-col`}>
-  {children}
-</body>    </html>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@800&family=Geist+Mono:wght@500&family=Instrument+Sans:wght@400..700&family=Instrument+Serif:ital@0;1&family=Shippori+Mincho+B1:wght@500;700;800&family=Noto+Sans+JP:wght@400;700&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body
+        className={`${anurati.variable} ${geistSans.variable} ${geistMono.variable} min-h-full flex flex-col`}
+      >
+        {children}
+      </body>
+    </html>
   );
 }

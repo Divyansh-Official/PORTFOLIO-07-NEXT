@@ -111,16 +111,26 @@ export default function Hero() {
 
       const W = heroEl.offsetWidth;
       const H = heroEl.offsetHeight;
-      const R = 20;
+      const R = 16;
 
+      // Uniform gap: the nav cut-out sits GAP px from the pills on the inner
+      // sides AND the bottom, so the spacing reads equal all the way around.
+      // (Matches the navbar's own 0.75rem ≈ 12px padding on the outer sides/top.)
+      const GAP = 12;
+
+      const heroRect = heroEl.getBoundingClientRect();
       const navRect = navEl.getBoundingClientRect();
       const logoRect = logoEl.getBoundingClientRect();
 
-      const cutoutRightX = navRect.left - 10;
-      const cutoutRightY = navEl.offsetHeight + navEl.offsetTop + 1;
+      // Shared bottom edge for both notches — GAP below the lower of the pills.
+      const cutoutY =
+        Math.max(navRect.bottom, logoRect.bottom) - heroRect.top + GAP;
 
-      const cutoutLeftX = logoRect.right + 10;
-      const cutoutLeftY = cutoutRightY;
+      const cutoutRightX = navRect.left - heroRect.left - GAP;
+      const cutoutRightY = cutoutY;
+
+      const cutoutLeftX = logoRect.right - heroRect.left + GAP;
+      const cutoutLeftY = cutoutY;
 
       if (window.innerWidth < 1000) {
         setClipPath(undefined);
