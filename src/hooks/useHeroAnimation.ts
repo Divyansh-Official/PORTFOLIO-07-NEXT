@@ -100,6 +100,11 @@ export function useHeroAnimation(
     });
     // Expose Lenis so the nav (and anything else) can smooth-scroll to anchors.
     (window as Window & { __lenis?: Lenis }).__lenis = lenis;
+    // CRITICAL: keep ScrollTrigger in sync with Lenis' smooth scroll. Without
+    // this, wheel-driven desktop scrolling never updates triggers, so every
+    // gsap.from(opacity:0) reveal stays stuck hidden on desktop. (Mobile touch
+    // uses native scroll events, which is why it appeared to work there.)
+    lenis.on("scroll", ScrollTrigger.update);
     const lenisHandler = (time: number) => lenis.raf(time * 1000);
     gsap.ticker.add(lenisHandler);
     gsap.ticker.lagSmoothing(0);

@@ -413,7 +413,7 @@ export default function Hero() {
         <canvas className="hero-canvas" ref={canvasRef}></canvas>
 
         {/* Scroll-driven 3D katana — host element the use3dElement hook mounts into */}
-        <div id="container3D" className="container3D" />
+        {/* <div id="container3D" className="container3D" /> */}
 
         {/* Dissolve-shader reveal of the "Introduction" headline */}
         <Introduction contentRef={contentRef} />

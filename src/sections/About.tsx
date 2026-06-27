@@ -12,13 +12,41 @@ export default function About() {
 
   useEffect(() => {
     const ctx = gsap.context(() => {
+      // ── Hero image collapses into a 3D notched clip-card ─────────────────
+      // The pinned stage holds the full-bleed hero background image; as you
+      // scroll it scales down, the corner-cut clip-path morphs in, and it
+      // tilts in 3D — landing as a card that's part of the About section.
+      const collapse = gsap.timeline({
+        scrollTrigger: {
+          trigger: ".ab-collapse",
+          start: "top top",
+          end: "+=160%",
+          scrub: 1,
+          pin: ".ab-collapse",
+          pinSpacing: true,
+          anticipatePin: 1,
+        },
+      });
+      collapse.to(
+        ".hc-card",
+        {
+          scale: 0.46,
+          yPercent: -4,
+          rotateX: 6,
+          "--cut": "38px",
+          ease: "none",
+        },
+        0
+      );
+
+      // ── About content ────────────────────────────────────────────────────
       gsap.from(".ab-reveal", {
         y: 44,
         opacity: 0,
         duration: 0.9,
         ease: "power3.out",
         stagger: 0.08,
-        scrollTrigger: { trigger: sectionRef.current, start: "top 70%" },
+        scrollTrigger: { trigger: ".ab-grid", start: "top 78%" },
       });
 
       gsap.from(".ab-stat", {
@@ -27,10 +55,9 @@ export default function About() {
         duration: 0.8,
         ease: "power3.out",
         stagger: 0.12,
-        scrollTrigger: { trigger: ".ab-stats", start: "top 85%" },
+        scrollTrigger: { trigger: ".ab-stats", start: "top 88%" },
       });
 
-      // Vertical name rail draws in
       gsap.fromTo(
         ".ab-rail-line",
         { scaleY: 0 },
@@ -38,8 +65,8 @@ export default function About() {
           scaleY: 1,
           ease: "none",
           scrollTrigger: {
-            trigger: sectionRef.current,
-            start: "top 70%",
+            trigger: ".ab-grid",
+            start: "top 75%",
             end: "bottom 60%",
             scrub: true,
           },
@@ -53,23 +80,75 @@ export default function About() {
   return (
     <section className="about" id="about" ref={sectionRef}>
       <style>{`
+        @property --cut {
+          syntax: '<length>';
+          inherits: false;
+          initial-value: 0px;
+        }
+
         .about {
           position: relative;
           background: var(--bg);
           color: var(--ink);
-          padding: clamp(5rem, 13vh, 12rem) clamp(1.25rem, 5vw, 6rem);
           overflow: hidden;
         }
+
+        /* ── Collapse stage (pinned) ──────────────────────────────────── */
+        .ab-collapse {
+          position: relative;
+          height: 100vh;
+          width: 100%;
+          background: #000;
+          perspective: 1600px;
+          overflow: hidden;
+        }
+        .hc-card {
+          position: absolute;
+          inset: 0;
+          transform-origin: center center;
+          transform-style: preserve-3d;
+          filter: drop-shadow(0 40px 60px rgba(0, 0, 0, 0.65));
+          will-change: transform, clip-path;
+          --cut: 0px;
+          /* chamfered ("clip design") card — at --cut:0 it's a full rectangle,
+             GSAP animates --cut up so the corners cut in as it collapses */
+          clip-path: polygon(
+            var(--cut) 0%,
+            calc(100% - var(--cut)) 0%,
+            100% var(--cut),
+            100% calc(100% - var(--cut)),
+            calc(100% - var(--cut)) 100%,
+            var(--cut) 100%,
+            0% calc(100% - var(--cut)),
+            0% var(--cut)
+          );
+        }
+        .hc-card::after {
+          content: "";
+          position: absolute;
+          inset: 0;
+          box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.10);
+          clip-path: inherit;
+          pointer-events: none;
+        }
+        .hc-card img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          display: block;
+        }
+
+        /* ── About body ───────────────────────────────────────────────── */
         .ab-grid {
           max-width: 1500px;
           margin: 0 auto;
+          padding: clamp(5rem, 13vh, 12rem) clamp(1.25rem, 5vw, 6rem);
           display: grid;
           grid-template-columns: auto 1fr;
           gap: clamp(2rem, 6vw, 6rem);
           align-items: start;
         }
 
-        /* Vertical katakana rail */
         .ab-rail {
           display: flex;
           gap: 1.2rem;
@@ -159,6 +238,14 @@ export default function About() {
           .ab-rail-jp { writing-mode: horizontal-tb; }
         }
       `}</style>
+
+      {/* Hero image → 3D clip-card collapse (pinned) */}
+      <div className="ab-collapse">
+        <div className="hc-card">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/hero/bg1.png" alt="" />
+        </div>
+      </div>
 
       <div className="ab-grid">
         <div className="ab-rail" aria-hidden="true">
