@@ -20,8 +20,9 @@ const vertexShader = `
 const fragmentShader = `
   uniform float uProgress;
   uniform vec2 uResolution;
-  uniform vec3 uColor;
   uniform float uSpread;
+  uniform sampler2D uRevealTexture;
+  uniform vec2 uTexResolution;
   varying vec2 vUv;
 
   float Hash(vec2 p) {
@@ -46,6 +47,16 @@ const fragmentShader = `
     return v;
   }
 
+  // Cover-fit the reveal image to the canvas (fill, crop the overflow).
+  vec2 coverUV(vec2 uv, vec2 res, vec2 texSize) {
+    if (texSize.x < 1.0 || texSize.y < 1.0) return uv;
+    vec2 s = res / texSize;
+    float scale = max(s.x, s.y);
+    vec2 scaled = texSize * scale;
+    vec2 offset = (res - scaled) * 0.5;
+    return (uv * res - offset) / scaled;
+  }
+
   void main() {
     vec2 uv = vUv;
     float aspect = uResolution.x / uResolution.y;
@@ -60,21 +71,19 @@ const fragmentShader = `
     float pixelSize = 1.0 / uResolution.y;
     float alpha     = 1.0 - smoothstep(-pixelSize, pixelSize, d);
 
-    gl_FragColor = vec4(uColor, alpha);
+    // Reveal the image (cover-fit), using the dissolve as its alpha mask.
+    vec2 cuv      = coverUV(uv, uResolution, uTexResolution);
+    vec4 texColor = texture2D(uRevealTexture, cuv);
+    gl_FragColor  = vec4(texColor.rgb, alpha * texColor.a);
   }
 `;
 
 // ── Config ────────────────────────────────────────────────────────────────────
 
-// color: "#ebf5df", "#43202b", "#2E0D13"
-const CONFIG = { color: "#000000", spread: 0.5, speed: 2 };
-
-function hexToRgb(hex: string) {
-  const r = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  return r
-    ? { r: parseInt(r[1], 16) / 255, g: parseInt(r[2], 16) / 255, b: parseInt(r[3], 16) / 255 }
-    : { r: 0.89, g: 0.89, b: 0.89 };
-}
+// image: the picture the dissolve reveals over the fluid background as you
+// scroll (swap for any path under /public). spread = dissolve edge softness,
+// speed = how fast the reveal completes relative to the hero's scroll.
+const CONFIG = { image: "/hero/bg2.png", spread: 0.5, speed: 2 };
 
 // ── Hook ──────────────────────────────────────────────────────────────────────
 
@@ -114,16 +123,25 @@ export function useHeroAnimation(
     const camera   = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
     const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: false, powerPreference: 'low-power' });
 
-    const rgb      = hexToRgb(CONFIG.color);
     const geometry = new THREE.PlaneGeometry(2, 2);
+
+    // Image the dissolve reveals — cover-fit, sRGB for correct colour.
+    const revealTexture = new THREE.TextureLoader().load(CONFIG.image, (t) => {
+      material.uniforms.uTexResolution.value.set(t.image.width, t.image.height);
+    });
+    revealTexture.minFilter = THREE.LinearFilter;
+    revealTexture.magFilter = THREE.LinearFilter;
+    revealTexture.colorSpace = THREE.SRGBColorSpace;
+
     const material = new THREE.ShaderMaterial({
       vertexShader,
       fragmentShader,
       uniforms: {
-        uProgress:   { value: 0 },
-        uResolution: { value: new THREE.Vector2(hero.offsetWidth, hero.offsetHeight) },
-        uColor:      { value: new THREE.Vector3(rgb.r, rgb.g, rgb.b) },
-        uSpread:     { value: CONFIG.spread },
+        uProgress:      { value: 0 },
+        uResolution:    { value: new THREE.Vector2(hero.offsetWidth, hero.offsetHeight) },
+        uSpread:        { value: CONFIG.spread },
+        uRevealTexture: { value: revealTexture },
+        uTexResolution: { value: new THREE.Vector2(1, 1) },
       },
       transparent: true,
     });
@@ -182,33 +200,37 @@ export function useHeroAnimation(
       });
     }
 
-    // ── SplitText word fade ───────────────────────────────────────────────────
+    // ── SplitText word fade (only if an <h2> exists in the content) ───────────
     const h2 = content.querySelector("h2") as HTMLElement | null;
-    if (!h2) return;
+    let split: SplitText | null = null;
+    let wordST: ScrollTrigger | null = null;
+    let words: HTMLElement[] = [];
 
-    const split   = new SplitText(h2, { type: "words" });
-    const words   = split.words as HTMLElement[];
-    words.forEach(w => { w.style.willChange = "opacity"; });
-    const setters = words.map(w => gsap.quickSetter(w, "opacity") as (v: number) => void);
-    gsap.set(words, { opacity: 0 });
+    if (h2) {
+      split = new SplitText(h2, { type: "words" });
+      words = split.words as HTMLElement[];
+      words.forEach(w => { w.style.willChange = "opacity"; });
+      const setters = words.map(w => gsap.quickSetter(w, "opacity") as (v: number) => void);
+      gsap.set(words, { opacity: 0 });
 
-    const wordST = ScrollTrigger.create({
-      trigger: content,
-      start: "top 25%",
-      end: "bottom 100%",
-      onUpdate: ({ progress }) => {
-        const total = words.length;
-        for (let i = 0; i < total; i++) {
-          const wp  = i / total;
-          const nwp = (i + 1) / total;
-          setters[i](
-            progress >= nwp ? 1 :
-            progress >= wp  ? (progress - wp) / (nwp - wp) :
-            0
-          );
-        }
-      },
-    });
+      wordST = ScrollTrigger.create({
+        trigger: content,
+        start: "top 25%",
+        end: "bottom 100%",
+        onUpdate: ({ progress }) => {
+          const total = words.length;
+          for (let i = 0; i < total; i++) {
+            const wp  = i / total;
+            const nwp = (i + 1) / total;
+            setters[i](
+              progress >= nwp ? 1 :
+              progress >= wp  ? (progress - wp) / (nwp - wp) :
+              0
+            );
+          }
+        },
+      });
+    }
 
     // ── Cleanup ───────────────────────────────────────────────────────────────
     return () => {
@@ -220,12 +242,13 @@ export function useHeroAnimation(
         delete (window as Window & { __lenis?: Lenis }).__lenis;
       }
       lenis.destroy();
-      wordST.kill();
-      split.revert();
+      wordST?.kill();
+      split?.revert();
       ScrollTrigger.getAll().forEach(t => t.kill());
       renderer.dispose();
       geometry.dispose();
       material.dispose();
+      revealTexture.dispose();
       canvas.style.willChange  = "";
       if (heroHeader) heroHeader.style.willChange = "";
       words.forEach(w => { w.style.willChange = ""; });
