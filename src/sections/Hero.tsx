@@ -82,6 +82,7 @@ export default function Hero() {
   const contentRef = useRef<HTMLElement>(null);
   const headlineRef = useRef<HTMLParagraphElement>(null);
   const rightNameRef = useRef<HTMLHeadingElement>(null);
+  const darkSloganRef = useRef<HTMLParagraphElement>(null);
   const canvasRefInteractiveBG = useFluidEffect();
 
   const [clipPath, setClipPath] = useState<string | undefined>(undefined);
@@ -217,29 +218,42 @@ export default function Hero() {
   // they can never flash in. This just resolves them as you scroll, driven
   // straight off scroll position (the same signal as the bg2 reveal).
   useEffect(() => {
-    const el = rightNameRef.current;
     const heroEl = heroRef.current;
-    if (!el || !heroEl) return;
+    if (!heroEl) return;
 
-    const chars = Array.from(el.querySelectorAll<HTMLElement>(".rn-char"));
-    if (!chars.length) return;
-    const oSet = chars.map((c) => gsap.quickSetter(c, "opacity") as (v: number) => void);
-    const ySet = chars.map((c) => gsap.quickSetter(c, "y", "px") as (v: number) => void);
+    type Group = { o: ((v: number) => void)[]; y: ((v: number) => void)[]; n: number; rise: number };
+    const makeGroup = (root: HTMLElement | null, sel: string, rise: number): Group | null => {
+      const chars = root ? Array.from(root.querySelectorAll<HTMLElement>(sel)) : [];
+      if (!chars.length) return null;
+      return {
+        o: chars.map((c) => gsap.quickSetter(c, "opacity") as (v: number) => void),
+        y: chars.map((c) => gsap.quickSetter(c, "y", "px") as (v: number) => void),
+        n: chars.length,
+        rise,
+      };
+    };
+    const groups = [
+      makeGroup(rightNameRef.current, ".rn-char", 26),
+      makeGroup(darkSloganRef.current, ".ds-char", 14),
+    ].filter(Boolean) as Group[];
+    if (!groups.length) return;
 
     const update = () => {
       const maxScroll = Math.max(1, heroEl.offsetHeight - window.innerHeight);
       const raw = window.scrollY / maxScroll; // 0..1 over the hero scroll
-      // DELAY: stays hidden until START of the scroll, then resolves over SPAN.
-      const START = 0.6;  // ← nothing appears until 30% scrolled (tune the delay)
-      const SPAN = 0.2;   // ← then resolves over the next 60%
+      // DELAY: stays hidden until START of the scroll, then resolves over SPAN
+      // (first → last glyph mapped across that window).
+      const START = 0.6;  // ← nothing appears until 60% scrolled (tune the delay)
+      const SPAN = 0.2;   // ← then resolves over the next 20%
       const progress = Math.min(Math.max((raw - START) / SPAN, 0), 1);
-      const total = chars.length;
-      for (let i = 0; i < total; i++) {
-        const cp = i / total;
-        const ncp = (i + 1) / total;
-        const v = progress >= ncp ? 1 : progress >= cp ? (progress - cp) / (ncp - cp) : 0;
-        oSet[i](v);
-        ySet[i]((1 - v) * 26);
+      for (const g of groups) {
+        for (let i = 0; i < g.n; i++) {
+          const cp = i / g.n;
+          const ncp = (i + 1) / g.n;
+          const v = progress >= ncp ? 1 : progress >= cp ? (progress - cp) / (ncp - cp) : 0;
+          g.o[i](v);
+          g.y[i]((1 - v) * g.rise);
+        }
       }
     };
     update();
@@ -340,6 +354,13 @@ export default function Hero() {
           height: 125svh;
           justify-content: flex-end;
         }
+        /* Right name glows PURPLE (the left one stays crimson) */
+        .header-name-right h1 {
+          --glow-color: rgba(150, 80, 255, 0.6);
+        }
+        .header-name-right h1:hover {
+          --glow-color: rgba(150, 80, 255, 0.95);
+        }
         .header-name-right h1 .rn-char {
           display: inline-block;
           opacity: 0;                 /* hidden until the scroll reveal — never flashes in */
@@ -434,6 +455,32 @@ export default function Hero() {
           text-shadow: 0 0 18px rgba(230, 0, 18, 0.5);
           white-space: nowrap;
         }
+
+        /* DARK ZONE slogan — same look as .heroSlogan but PURPLE, anchored higher
+           so it sits over the bg2 shader; resolves char-by-char with scroll. */
+        .heroSloganDark {
+          font-family: var(--font-anurati), "Geist Mono", monospace;
+          position: absolute;
+          left: 50%;
+          bottom: 32svh;
+          transform: translateX(-50%);
+          text-align: center;
+          letter-spacing: 0.2em;
+          font-size: clamp(0.85rem, 1.5vw, 1.5rem);
+          color: #fff;
+          text-shadow: 0 0 18px rgba(150, 80, 255, 0.65);
+          white-space: nowrap;
+          z-index: 5;
+          pointer-events: none;
+        }
+        .heroSloganDark .ds-char {
+          display: inline-block;
+          opacity: 0;                 /* hidden until the scroll reveal — never flashes in */
+          will-change: opacity, transform;
+        }
+        @media (max-width: 1000px) {
+          .heroSloganDark { display: none; }
+        }
       `}</style>
 
       <BasicNavigationBar />
@@ -480,6 +527,13 @@ export default function Hero() {
             ))}
           </h1>
         </div>
+
+        {/* DARK ZONE slogan — over bg2, resolves char-by-char with scroll like the right name */}
+        <p className="heroSloganDark" ref={darkSloganRef} aria-label={info.slogan2}>
+          {Array.from(info.slogan2).map((ch, i) => (
+            <span className="ds-char" key={i}>{ch === " " ? " " : ch}</span>
+          ))}
+        </p>
 
         {/* Scroll-driven 3D katana — host element the use3dElement hook mounts into */}
         {/* <div id="container3D" className="container3D" /> */}
