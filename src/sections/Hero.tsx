@@ -2,6 +2,7 @@ import BasicNavigationBar from "../components/nav/navBar";
 import info from "../data/information.json";
 import Introduction from "./Introduction";
 import { useRef, useState, useEffect } from "react";
+import gsap from "gsap";
 import { useHeroAnimation } from "../hooks/useHeroAnimation";
 import { use3dElement } from "../hooks/use3dElement";
 import { useFluidEffect } from "../hooks/useFluidEffect";
@@ -80,6 +81,7 @@ export default function Hero() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const contentRef = useRef<HTMLElement>(null);
   const headlineRef = useRef<HTMLParagraphElement>(null);
+  const rightNameRef = useRef<HTMLHeadingElement>(null);
   const canvasRefInteractiveBG = useFluidEffect();
 
   const [clipPath, setClipPath] = useState<string | undefined>(undefined);
@@ -210,6 +212,41 @@ export default function Hero() {
     };
   }, []);
 
+  // ── Right-side katakana name reveals char-by-char with scroll (over bg2) ─────
+  // Glyphs are real .rn-char spans hidden by CSS (opacity:0) from the start, so
+  // they can never flash in. This just resolves them as you scroll, driven
+  // straight off scroll position (the same signal as the bg2 reveal).
+  useEffect(() => {
+    const el = rightNameRef.current;
+    const heroEl = heroRef.current;
+    if (!el || !heroEl) return;
+
+    const chars = Array.from(el.querySelectorAll<HTMLElement>(".rn-char"));
+    if (!chars.length) return;
+    const oSet = chars.map((c) => gsap.quickSetter(c, "opacity") as (v: number) => void);
+    const ySet = chars.map((c) => gsap.quickSetter(c, "y", "px") as (v: number) => void);
+
+    const update = () => {
+      const maxScroll = Math.max(1, heroEl.offsetHeight - window.innerHeight);
+      const raw = window.scrollY / maxScroll; // 0..1 over the hero scroll
+      // DELAY: stays hidden until START of the scroll, then resolves over SPAN.
+      const START = 0.6;  // ← nothing appears until 30% scrolled (tune the delay)
+      const SPAN = 0.2;   // ← then resolves over the next 60%
+      const progress = Math.min(Math.max((raw - START) / SPAN, 0), 1);
+      const total = chars.length;
+      for (let i = 0; i < total; i++) {
+        const cp = i / total;
+        const ncp = (i + 1) / total;
+        const v = progress >= ncp ? 1 : progress >= cp ? (progress - cp) / (ncp - cp) : 0;
+        oSet[i](v);
+        ySet[i]((1 - v) * 26);
+      }
+    };
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    return () => window.removeEventListener("scroll", update);
+  }, []);
+
   useHeroAnimation(heroRef, canvasRef, contentRef);
 
   return (
@@ -293,9 +330,26 @@ export default function Hero() {
           --glow-color: rgba(230, 0, 18, 0.9);
         }
 
+        /* Same name mirrored to the right — anchored in the LOWER hero, over bg2,
+           rises + resolves with scroll (not in the parallaxing header) */
+        .header-name-right {
+          left: auto;
+          right: 5%;
+          top: auto;
+          bottom: 0;
+          height: 125svh;
+          justify-content: flex-end;
+        }
+        .header-name-right h1 .rn-char {
+          display: inline-block;
+          opacity: 0;                 /* hidden until the scroll reveal — never flashes in */
+          will-change: opacity, transform;
+        }
+
         @media (max-width: 1000px) {
           .header-name { left: 50%; transform: translateX(-50%); top: 24px; }
           .header-name h1 { -webkit-text-stroke-width: 1.5px; }
+          .header-name-right { display: none; }
         }
 
         .engagment-button {
@@ -416,6 +470,16 @@ export default function Hero() {
         </div>
 
         <canvas className="hero-canvas" ref={canvasRef}></canvas>
+
+        {/* Same name, right side — anchored OVER the bg2 canvas (rendered after it),
+            rises + dissolves in with scroll, like the old Introduction text */}
+        <div className="header-name header-name-right">
+          <h1 ref={rightNameRef} aria-label={info.creativeLastName}>
+            {Array.from(info.creativeLastName).map((ch, i) => (
+              <span className="rn-char" key={i}>{ch}</span>
+            ))}
+          </h1>
+        </div>
 
         {/* Scroll-driven 3D katana — host element the use3dElement hook mounts into */}
         {/* <div id="container3D" className="container3D" /> */}

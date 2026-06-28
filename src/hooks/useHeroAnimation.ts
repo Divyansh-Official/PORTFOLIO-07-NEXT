@@ -93,7 +93,7 @@ const fragmentShader = `
 // handing off seamlessly to the collapse card at the top of the next section.
 // image: bg2 (revealed over the fluid bg). bottomFade: fraction of the canvas
 // bottom that fades to black so bg2 blends into the marquee/background below.
-const CONFIG = { image: "/hero/bg2.png", spread: .50, speed: 0.75, bottomFade: 0.16 };
+const CONFIG = { image: "/hero/bg2.png", spread: .50, speed: 1.0, bottomFade: 0.16 };
 
 // ── Hook ──────────────────────────────────────────────────────────────────────
 
