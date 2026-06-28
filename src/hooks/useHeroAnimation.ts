@@ -18,14 +18,12 @@ const vertexShader = `
 `;
 
 const fragmentShader = `
-  uniform float uProgress1;
-  uniform float uProgress2;
+  uniform float uProgress;
   uniform vec2 uResolution;
   uniform float uSpread;
-  uniform sampler2D uTex1;
-  uniform sampler2D uTex2;
-  uniform vec2 uTexRes1;
-  uniform vec2 uTexRes2;
+  uniform float uBottomFade;
+  uniform sampler2D uTex;
+  uniform vec2 uTexRes;
   varying vec2 vUv;
 
   float Hash(vec2 p) {
@@ -74,17 +72,15 @@ const fragmentShader = `
     vec2 centeredUv = (uv - 0.5) * vec2(aspect, 1.0);
     float noiseV = fbm(centeredUv * 15.0);
 
-    // Stage 1: bg2 dissolves in over the fluid background.
-    // Stage 2: bg3 dissolves in over bg2 — same noise edge, just delayed.
-    float a1 = dissolveAlpha(uv, uProgress1, noiseV);
-    float a2 = dissolveAlpha(uv, uProgress2, noiseV);
+    float a = dissolveAlpha(uv, uProgress, noiseV);          // bg2 reveal
+    vec4 c = texture2D(uTex, coverUV(uv, uResolution, uTexRes));
 
-    vec4 c1 = texture2D(uTex1, coverUV(uv, uResolution, uTexRes1));
-    vec4 c2 = texture2D(uTex2, coverUV(uv, uResolution, uTexRes2));
+    // Fade the bottom of bg2 to black (uv.y=0 is the bottom) so it blends
+    // seamlessly into the page background / the marquee below.
+    float bottomFade = smoothstep(0.0, uBottomFade, uv.y);
+    vec3 color = c.rgb * bottomFade;
 
-    vec3 color  = mix(c1.rgb, c2.rgb, a2);  // bg3 over bg2
-    float alpha = max(a1, a2);              // opaque where either is revealed
-    gl_FragColor = vec4(color, alpha);
+    gl_FragColor = vec4(color, a);
   }
 `;
 
@@ -95,7 +91,9 @@ const fragmentShader = `
 // speed = how fast the reveal completes relative to the hero's scroll.
 // speed 1 → the bg2 reveal completes exactly as the hero finishes scrolling,
 // handing off seamlessly to the collapse card at the top of the next section.
-const CONFIG = { image1: "/hero/bg2.png", image2: "/hero/bg3.png", spread: 0.5, speed: 0.5 };
+// image: bg2 (revealed over the fluid bg). bottomFade: fraction of the canvas
+// bottom that fades to black so bg2 blends into the marquee/background below.
+const CONFIG = { image: "/hero/bg2.png", spread: .50, speed: 0.75, bottomFade: 0.16 };
 
 // ── Hook ──────────────────────────────────────────────────────────────────────
 
@@ -137,35 +135,25 @@ export function useHeroAnimation(
 
     const geometry = new THREE.PlaneGeometry(2, 2);
 
-    // Two images revealed in sequence — bg2 first, then bg3 over it. Cover-fit, sRGB.
-    const loadTex = (url: string, onLoad: (t: THREE.Texture) => void) => {
-      const t = new THREE.TextureLoader().load(url, onLoad);
-      t.minFilter = THREE.LinearFilter;
-      t.magFilter = THREE.LinearFilter;
-      t.colorSpace = THREE.SRGBColorSpace;
-      return t;
-    };
-    const tex1 = loadTex(CONFIG.image1, (t) => {
+    // bg2 — cover-fit, sRGB for correct colour.
+    const tex = new THREE.TextureLoader().load(CONFIG.image, (t) => {
       const img = t.image as { width: number; height: number };
-      material.uniforms.uTexRes1.value.set(img.width, img.height);
+      material.uniforms.uTexRes.value.set(img.width, img.height);
     });
-    const tex2 = loadTex(CONFIG.image2, (t) => {
-      const img = t.image as { width: number; height: number };
-      material.uniforms.uTexRes2.value.set(img.width, img.height);
-    });
+    tex.minFilter = THREE.LinearFilter;
+    tex.magFilter = THREE.LinearFilter;
+    tex.colorSpace = THREE.SRGBColorSpace;
 
     const material = new THREE.ShaderMaterial({
       vertexShader,
       fragmentShader,
       uniforms: {
-        uProgress1:  { value: 0 },
-        uProgress2:  { value: 0 },
+        uProgress:   { value: 0 },
         uResolution: { value: new THREE.Vector2(hero.offsetWidth, hero.offsetHeight) },
         uSpread:     { value: CONFIG.spread },
-        uTex1:       { value: tex1 },
-        uTex2:       { value: tex2 },
-        uTexRes1:    { value: new THREE.Vector2(1, 1) },
-        uTexRes2:    { value: new THREE.Vector2(1, 1) },
+        uBottomFade: { value: CONFIG.bottomFade },
+        uTex:        { value: tex },
+        uTexRes:     { value: new THREE.Vector2(1, 1) },
       },
       transparent: true,
     });
@@ -184,20 +172,13 @@ export function useHeroAnimation(
     window.addEventListener("resize", debouncedResize);
 
     // ── Scroll → shader progress ──────────────────────────────────────────────
-    // Two reveals across the hero scroll: bg2 over the first ~half, then bg3
-    // over bg2 across the second half (so by the hero end you're on bg3).
-    let scrollProgress1 = 0;
-    let scrollProgress2 = 0;
-    let needsRender     = false;
+    let scrollProgress = 0;
+    let needsRender    = false;
 
     lenis.on("scroll", ({ scroll }: { scroll: number }) => {
       const maxScroll = hero.offsetHeight - window.innerHeight;
-      const t = Math.min(Math.max(scroll / maxScroll, 0), 1) * CONFIG.speed;
-      // bg2 done by ~t=0.39, bg3 done (and frozen) by ~t=0.79 — a buffer before
-      // the collapse pin engages at t=1, so nothing re-renders during the pin.
-      scrollProgress1 = Math.min(t * 2.8, 1.1);                      // bg2 reveal
-      scrollProgress2 = Math.min(Math.max((t - 0.4) * 2.8, 0), 1.1); // bg3 reveal
-      needsRender = true;
+      scrollProgress  = Math.min((scroll / maxScroll) * CONFIG.speed, 1.1);
+      needsRender     = true;
     });
 
     renderer.render(scene, camera);
@@ -206,10 +187,9 @@ export function useHeroAnimation(
     const threeHandler = () => {
       if (!needsRender) return;
       // Stop rendering once bg3 is fully revealed (hero scrolled through)
-      heroVisible = scrollProgress2 < 1.1;
+      heroVisible = scrollProgress < 1.1;
       if (!heroVisible) { needsRender = false; return; }
-      material.uniforms.uProgress1.value = scrollProgress1;
-      material.uniforms.uProgress2.value = scrollProgress2;
+      material.uniforms.uProgress.value = scrollProgress;
       renderer.render(scene, camera);
       needsRender = false;
     };
@@ -280,8 +260,7 @@ export function useHeroAnimation(
       renderer.dispose();
       geometry.dispose();
       material.dispose();
-      tex1.dispose();
-      tex2.dispose();
+      tex.dispose();
       canvas.style.willChange  = "";
       if (heroHeader) heroHeader.style.willChange = "";
       words.forEach(w => { w.style.willChange = ""; });

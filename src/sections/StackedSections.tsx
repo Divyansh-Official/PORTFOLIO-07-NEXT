@@ -11,6 +11,7 @@ import Hero from "./Hero";
  * section markup) is loaded lazily on the client instead of bloating the
  * initial bundle / SSR payload — the splash plays while these chunks arrive.
  */
+const Marquee = dynamic(() => import("./Marquee"));
 const About = dynamic(() => import("./About"));
 const Skills = dynamic(() => import("./Skills"));
 const Projects = dynamic(() => import("./Projects"));
@@ -22,6 +23,7 @@ export default function StackedSections() {
   return (
     <>
       <Hero />
+      <Marquee />
       <About />
       <Skills />
       <Projects />

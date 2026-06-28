@@ -22,5 +22,6 @@
     "creativeSlogan03": "Dominate",
 
     "ctaPrimary": { "label": "Hire Me", "href": "mailto:iamdivyanshtiwari@gmail.com" },
-    "ctaSecondary": { "label": "Contact", "href": "#contact" }
+    "ctaSecondary": { "label": "Contact", "href": "#contact" },
+    "ticker": ["Ideate", "Develop", "Dominate", "Build", "Ship", "Reimagine"]
 }
