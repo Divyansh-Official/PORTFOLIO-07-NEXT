@@ -217,6 +217,12 @@ export default function Hero() {
       <style>{`
         @import url('https://fonts.cdnfonts.com/css/ica-rubrik-black');
 
+        @property --cut {
+          syntax: '<length>';
+          inherits: false;
+          initial-value: 0px;
+        }
+
         .hero {
           --base-100: #ebf5df;
           --base-200: #fff;

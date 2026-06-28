@@ -326,7 +326,9 @@ export function useFluidEffect() {
     function animate() {
       rafId = requestAnimationFrame(animate);
 
-      if (!visible || document.hidden) return;
+      // Paused during the hero→card collapse so scaling the frozen canvas stays
+      // smooth (a live-rendering canvas lags badly while it's being scaled).
+      if (!visible || document.hidden || (window as Window & { __heroPaused?: boolean }).__heroPaused) return;
 
       if (isMoving && performance.now() - lastMoveTime > 50) {
         isMoving = false;

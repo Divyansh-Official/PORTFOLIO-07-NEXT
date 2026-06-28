@@ -83,7 +83,9 @@ const fragmentShader = `
 // image: the picture the dissolve reveals over the fluid background as you
 // scroll (swap for any path under /public). spread = dissolve edge softness,
 // speed = how fast the reveal completes relative to the hero's scroll.
-const CONFIG = { image: "/hero/bg2.png", spread: 0.5, speed: 2 };
+// speed 1 → the bg2 reveal completes exactly as the hero finishes scrolling,
+// handing off seamlessly to the collapse card at the top of the next section.
+const CONFIG = { image: "/hero/bg2.png", spread: 0.5, speed: 1 };
 
 // ── Hook ──────────────────────────────────────────────────────────────────────
 
