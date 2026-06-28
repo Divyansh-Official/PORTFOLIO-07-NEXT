@@ -244,7 +244,6 @@ export default function Hero() {
           height: 175svh;
           color: var(--base-200);
           overflow: hidden;
-          contain: layout style;
         }
         .hero-img { width: 100%; height: 100%; position: absolute; inset: 0; top: -150px; }
         .hero-header {

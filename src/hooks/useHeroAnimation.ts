@@ -18,11 +18,14 @@ const vertexShader = `
 `;
 
 const fragmentShader = `
-  uniform float uProgress;
+  uniform float uProgress1;
+  uniform float uProgress2;
   uniform vec2 uResolution;
   uniform float uSpread;
-  uniform sampler2D uRevealTexture;
-  uniform vec2 uTexResolution;
+  uniform sampler2D uTex1;
+  uniform sampler2D uTex2;
+  uniform vec2 uTexRes1;
+  uniform vec2 uTexRes2;
   varying vec2 vUv;
 
   float Hash(vec2 p) {
@@ -57,24 +60,31 @@ const fragmentShader = `
     return (uv * res - offset) / scaled;
   }
 
+  // Noise-edged dissolve mask: 0 (hidden) → 1 (revealed) as progress grows.
+  float dissolveAlpha(vec2 uv, float progress, float noiseV) {
+    float edge = uv.y + uSpread - progress * (1.0 + uSpread * 2.0);
+    float d    = edge + noiseV * uSpread;
+    float px   = 1.0 / uResolution.y;
+    return 1.0 - smoothstep(-px, px, d);
+  }
+
   void main() {
     vec2 uv = vUv;
     float aspect = uResolution.x / uResolution.y;
     vec2 centeredUv = (uv - 0.5) * vec2(aspect, 1.0);
+    float noiseV = fbm(centeredUv * 15.0);
 
-    // Offset so at uProgress=0 it's fully transparent even with noise
-    // and at uProgress=1 it's fully opaque.
-    float dissolveEdge = uv.y + uSpread - uProgress * (1.0 + uSpread * 2.0);
-    float noiseValue   = fbm(centeredUv * 15.0);
-    float d            = dissolveEdge + noiseValue * uSpread;
+    // Stage 1: bg2 dissolves in over the fluid background.
+    // Stage 2: bg3 dissolves in over bg2 — same noise edge, just delayed.
+    float a1 = dissolveAlpha(uv, uProgress1, noiseV);
+    float a2 = dissolveAlpha(uv, uProgress2, noiseV);
 
-    float pixelSize = 1.0 / uResolution.y;
-    float alpha     = 1.0 - smoothstep(-pixelSize, pixelSize, d);
+    vec4 c1 = texture2D(uTex1, coverUV(uv, uResolution, uTexRes1));
+    vec4 c2 = texture2D(uTex2, coverUV(uv, uResolution, uTexRes2));
 
-    // Reveal the image (cover-fit), using the dissolve as its alpha mask.
-    vec2 cuv      = coverUV(uv, uResolution, uTexResolution);
-    vec4 texColor = texture2D(uRevealTexture, cuv);
-    gl_FragColor  = vec4(texColor.rgb, alpha * texColor.a);
+    vec3 color  = mix(c1.rgb, c2.rgb, a2);  // bg3 over bg2
+    float alpha = max(a1, a2);              // opaque where either is revealed
+    gl_FragColor = vec4(color, alpha);
   }
 `;
 
@@ -85,7 +95,7 @@ const fragmentShader = `
 // speed = how fast the reveal completes relative to the hero's scroll.
 // speed 1 → the bg2 reveal completes exactly as the hero finishes scrolling,
 // handing off seamlessly to the collapse card at the top of the next section.
-const CONFIG = { image: "/hero/bg2.png", spread: 0.5, speed: 1 };
+const CONFIG = { image1: "/hero/bg2.png", image2: "/hero/bg3.png", spread: 0.5, speed: 0.5 };
 
 // ── Hook ──────────────────────────────────────────────────────────────────────
 
@@ -127,23 +137,35 @@ export function useHeroAnimation(
 
     const geometry = new THREE.PlaneGeometry(2, 2);
 
-    // Image the dissolve reveals — cover-fit, sRGB for correct colour.
-    const revealTexture = new THREE.TextureLoader().load(CONFIG.image, (t) => {
-      material.uniforms.uTexResolution.value.set(t.image.width, t.image.height);
+    // Two images revealed in sequence — bg2 first, then bg3 over it. Cover-fit, sRGB.
+    const loadTex = (url: string, onLoad: (t: THREE.Texture) => void) => {
+      const t = new THREE.TextureLoader().load(url, onLoad);
+      t.minFilter = THREE.LinearFilter;
+      t.magFilter = THREE.LinearFilter;
+      t.colorSpace = THREE.SRGBColorSpace;
+      return t;
+    };
+    const tex1 = loadTex(CONFIG.image1, (t) => {
+      const img = t.image as { width: number; height: number };
+      material.uniforms.uTexRes1.value.set(img.width, img.height);
     });
-    revealTexture.minFilter = THREE.LinearFilter;
-    revealTexture.magFilter = THREE.LinearFilter;
-    revealTexture.colorSpace = THREE.SRGBColorSpace;
+    const tex2 = loadTex(CONFIG.image2, (t) => {
+      const img = t.image as { width: number; height: number };
+      material.uniforms.uTexRes2.value.set(img.width, img.height);
+    });
 
     const material = new THREE.ShaderMaterial({
       vertexShader,
       fragmentShader,
       uniforms: {
-        uProgress:      { value: 0 },
-        uResolution:    { value: new THREE.Vector2(hero.offsetWidth, hero.offsetHeight) },
-        uSpread:        { value: CONFIG.spread },
-        uRevealTexture: { value: revealTexture },
-        uTexResolution: { value: new THREE.Vector2(1, 1) },
+        uProgress1:  { value: 0 },
+        uProgress2:  { value: 0 },
+        uResolution: { value: new THREE.Vector2(hero.offsetWidth, hero.offsetHeight) },
+        uSpread:     { value: CONFIG.spread },
+        uTex1:       { value: tex1 },
+        uTex2:       { value: tex2 },
+        uTexRes1:    { value: new THREE.Vector2(1, 1) },
+        uTexRes2:    { value: new THREE.Vector2(1, 1) },
       },
       transparent: true,
     });
@@ -162,13 +184,20 @@ export function useHeroAnimation(
     window.addEventListener("resize", debouncedResize);
 
     // ── Scroll → shader progress ──────────────────────────────────────────────
-    let scrollProgress = 0;
-    let needsRender    = false;
+    // Two reveals across the hero scroll: bg2 over the first ~half, then bg3
+    // over bg2 across the second half (so by the hero end you're on bg3).
+    let scrollProgress1 = 0;
+    let scrollProgress2 = 0;
+    let needsRender     = false;
 
     lenis.on("scroll", ({ scroll }: { scroll: number }) => {
       const maxScroll = hero.offsetHeight - window.innerHeight;
-      scrollProgress  = Math.min((scroll / maxScroll) * CONFIG.speed, 1.1);
-      needsRender     = true;
+      const t = Math.min(Math.max(scroll / maxScroll, 0), 1) * CONFIG.speed;
+      // bg2 done by ~t=0.39, bg3 done (and frozen) by ~t=0.79 — a buffer before
+      // the collapse pin engages at t=1, so nothing re-renders during the pin.
+      scrollProgress1 = Math.min(t * 2.8, 1.1);                      // bg2 reveal
+      scrollProgress2 = Math.min(Math.max((t - 0.4) * 2.8, 0), 1.1); // bg3 reveal
+      needsRender = true;
     });
 
     renderer.render(scene, camera);
@@ -176,10 +205,11 @@ export function useHeroAnimation(
     let heroVisible = true;
     const threeHandler = () => {
       if (!needsRender) return;
-      // Stop rendering once the hero is fully scrolled past
-      heroVisible = scrollProgress < 1.1;
+      // Stop rendering once bg3 is fully revealed (hero scrolled through)
+      heroVisible = scrollProgress2 < 1.1;
       if (!heroVisible) { needsRender = false; return; }
-      material.uniforms.uProgress.value = scrollProgress;
+      material.uniforms.uProgress1.value = scrollProgress1;
+      material.uniforms.uProgress2.value = scrollProgress2;
       renderer.render(scene, camera);
       needsRender = false;
     };
@@ -250,7 +280,8 @@ export function useHeroAnimation(
       renderer.dispose();
       geometry.dispose();
       material.dispose();
-      revealTexture.dispose();
+      tex1.dispose();
+      tex2.dispose();
       canvas.style.willChange  = "";
       if (heroHeader) heroHeader.style.willChange = "";
       words.forEach(w => { w.style.willChange = ""; });
