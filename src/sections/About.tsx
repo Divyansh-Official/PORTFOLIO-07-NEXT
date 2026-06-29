@@ -75,11 +75,14 @@ export default function About() {
       // if any cutout peeks at the top); DOCKED_SCALE = the final docked size.
       const START_SCALE = 1.3;
       const DOCKED_SCALE = 0.54;
+      // 3D tilt the card picks up as it docks (degrees, reached at the end). The
+      // .ab-collapse perspective makes it read as a depth tilt toward the z-axis.
+      const TILT = { x: -7, y: 13 };
 
       // Apply the fixed notched clip once, and re-measure/re-apply on refresh.
       const setClip = () => { card.style.setProperty("--card-clip", `path("${buildPath(1)}")`); };
       setClip();
-      gsap.set(card, { scale: START_SCALE, force3D: true });
+      gsap.set(card, { scale: START_SCALE, transformPerspective: 1200, force3D: true });
 
       ScrollTrigger.create({
         trigger: ".ab-collapse",
@@ -95,8 +98,17 @@ export default function About() {
           prog = p;
           const e = gsap.parseEase("power2.inOut")(p);
 
-          // ONLY the scale animates — fixed clip, cutouts reveal as it shrinks.
-          gsap.set(card, { scale: START_SCALE - e * (START_SCALE - DOCKED_SCALE), force3D: true });
+          // Scale shrinks (cutouts reveal) + a 3D tilt grows toward the dock. The
+          // 3D transform also promotes the card to its own GPU layer, which is what
+          // smooths out the scale glitch. Rotation is owned solely by scroll here;
+          // the magnet only translates (x/y) so the two never fight.
+          gsap.set(card, {
+            scale: START_SCALE - e * (START_SCALE - DOCKED_SCALE),
+            rotateX: TILT.x * e,
+            rotateY: TILT.y * e,
+            transformPerspective: 1200,
+            force3D: true,
+          });
 
           // black → white fade TARGET (bgTick eases the painted bg toward it)
           const bgP = gsap.utils.clamp(0, 1, (p - BG_FADE.start) * BG_FADE.speed);
@@ -104,7 +116,7 @@ export default function About() {
 
           if (p >= 0.92) docked = true;
           else if (docked) {
-            gsap.to(card, { x: 0, y: 0, rotateX: 0, rotateY: 0, duration: 0.35, ease: "power3.out" });
+            gsap.to(card, { x: 0, y: 0, duration: 0.35, ease: "power3.out" });
             docked = false;
           }
         },
@@ -116,9 +128,9 @@ export default function About() {
         const rect = card.getBoundingClientRect();
         const dx = (ev.clientX - (rect.left + rect.width / 2)) / rect.width;
         const dy = (ev.clientY - (rect.top + rect.height / 2)) / rect.height;
-        gsap.to(card, { x: dx * 46, y: dy * 46, rotateY: dx * 11, rotateX: -dy * 11, duration: 0.6, ease: "power3.out" });
+        gsap.to(card, { x: dx * 46, y: dy * 46, duration: 0.6, ease: "power3.out" });
       };
-      const onLeave = () => gsap.to(card, { x: 0, y: 0, rotateX: 0, rotateY: 0, duration: 0.7, ease: "power3.out" });
+      const onLeave = () => gsap.to(card, { x: 0, y: 0, duration: 0.7, ease: "power3.out" });
       card.addEventListener("mousemove", onMove);
       card.addEventListener("mouseleave", onLeave);
 
