@@ -43,14 +43,19 @@ export default function About() {
       };
       gsap.ticker.add(bgTick);
 
-      // Rounded + notched card via clip-path: path() (quadratic-curve corners
-      // round the outer corners AND the top-left folder-tab notch).
+      // Rounded card via clip-path: path() — quadratic-curve rounding on the outer
+      // corners, the folder-tab notch at the TOP-LEFT, and a diagonal BEVEL cut at
+      // the BOTTOM-RIGHT only (top + bottom-left are left untouched).
       const buildPath = (sp: number) => {
-        const R = sp * 40, nr = sp * 16, nw = sp * 150, nh = sp * 72;
+        const R = sp * 40, nr = sp * 16;
+        const nw = sp * 150, nh = sp * 72;   // top-left folder-tab notch (unchanged)
+        const bv = sp * 130;                 // bottom-right bevel — diagonal corner cut
         const pts: [number, number][] = [
-          [nw, 0], [W, 0], [W, H], [0, H], [0, nh], [nw, nh],
+          [nw, 0], [W, 0],
+          [W, H - bv], [W - bv, H],          // bottom-right BEVEL (diagonal)
+          [0, H], [0, nh], [nw, nh],         // bottom-left → top-left notch
         ];
-        const radii = [nr, R, R, R, nr, nr];
+        const radii = [nr, R, nr, nr, R, nr, nr];
         const n = pts.length;
         let d = "";
         for (let i = 0; i < n; i++) {
@@ -74,7 +79,9 @@ export default function About() {
       // reference. START_SCALE = how zoomed/off-screen the cutouts begin (raise it
       // if any cutout peeks at the top); DOCKED_SCALE = the final docked size.
       const START_SCALE = 1.3;
-      const DOCKED_SCALE = 0.54;
+      // ▼▼ DOCKED CARD SIZE — this is the knob. Lower = smaller docked card,
+      //    higher = bigger. (1 = full screen; 0.46 ≈ a touch under half.)
+      const DOCKED_SCALE = 0.36;
       // 3D tilt the card picks up as it docks (degrees, reached at the end). The
       // .ab-collapse perspective makes it read as a depth tilt toward the z-axis.
       const TILT = { x: -7, y: 13 };
