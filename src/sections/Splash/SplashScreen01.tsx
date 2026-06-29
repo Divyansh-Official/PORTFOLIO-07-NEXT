@@ -234,6 +234,9 @@ export default function SplashScreen01() {
             onComplete: () => {
               // Drop it from layout so it no longer intercepts pointer events.
               gsap.set(".preloader", { display: "none" });
+              // Tell the hero the splash is gone → it plays its entrance animation.
+              (window as Window & { __heroSplashDone?: boolean }).__heroSplashDone = true;
+              window.dispatchEvent(new Event("splash:complete"));
             },
           },
           "+=0.15",

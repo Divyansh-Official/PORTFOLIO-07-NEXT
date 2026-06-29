@@ -83,6 +83,8 @@ export default function Hero() {
   const headlineRef = useRef<HTMLParagraphElement>(null);
   const rightNameRef = useRef<HTMLHeadingElement>(null);
   const darkSloganRef = useRef<HTMLParagraphElement>(null);
+  const statementRef = useRef<HTMLDivElement>(null);
+  const ctaWrapRef = useRef<HTMLDivElement>(null);
   const canvasRefInteractiveBG = useFluidEffect();
 
   const [clipPath, setClipPath] = useState<string | undefined>(undefined);
@@ -261,6 +263,63 @@ export default function Hero() {
     return () => window.removeEventListener("scroll", update);
   }, []);
 
+  // ── Entrance: statement words rise + buttons fade in once the splash clears ──
+  useEffect(() => {
+    const statement = statementRef.current;
+    const ctaWrap = ctaWrapRef.current;
+    if (!statement || !ctaWrap) return;
+
+    const lines = Array.from(statement.querySelectorAll<HTMLElement>(".hs-line"));
+    const btns = Array.from(ctaWrap.querySelectorAll<HTMLElement>(".glass-button"));
+
+    // Hide them up-front (behind the splash) so they never flash before entering.
+    gsap.set(lines, { yPercent: 120, opacity: 0 });
+    gsap.set(btns, { y: 26, opacity: 0 });
+
+    let played = false;
+    const playEntrance = () => {
+      if (played) return;
+      played = true;
+      // REVEAL: each word rises out of its mask + fades in, staggered.
+      gsap.timeline()
+        .to(lines, { yPercent: 0, opacity: 1, duration: 1.15, ease: "power4.out", stagger: 0.14 })
+        .to(btns, { y: 0, opacity: 1, duration: 0.7, ease: "power3.out", stagger: 0.12 }, "-=0.7");
+    };
+
+    // Fire when the splash signals it's gone (or immediately if it already did).
+    const w = window as Window & { __heroSplashDone?: boolean };
+    if (w.__heroSplashDone) playEntrance();
+    else window.addEventListener("splash:complete", playEntrance, { once: true });
+    // Safety nets so the reveal can never be missed: first scroll, or a timeout.
+    window.addEventListener("scroll", playEntrance, { once: true, passive: true });
+    const fallback = window.setTimeout(playEntrance, 10000);
+
+    return () => {
+      window.removeEventListener("splash:complete", playEntrance);
+      window.removeEventListener("scroll", playEntrance);
+      window.clearTimeout(fallback);
+    };
+  }, []);
+
+  // ── Scroll: the statement drifts up + fades as you scroll through the hero ────
+  useEffect(() => {
+    const heroEl = heroRef.current;
+    const statement = statementRef.current;
+    if (!heroEl || !statement) return;
+
+    const setY = gsap.quickSetter(statement, "y", "px") as (v: number) => void;
+    const setO = gsap.quickSetter(statement, "opacity") as (v: number) => void;
+    const onScroll = () => {
+      const max = Math.max(1, heroEl.offsetHeight - window.innerHeight);
+      const p = Math.min(window.scrollY / max, 1);
+      setY(-p * 150);                       // parallax drift upward as you scroll
+      setO(Math.max(0, 1 - p * 1.8));       // fade out before the right name appears
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   useHeroAnimation(heroRef, canvasRef, contentRef);
 
   return (
@@ -373,15 +432,20 @@ export default function Hero() {
           .header-name-right { display: none; }
         }
 
+        /* Contact stacked directly below Hire Me, both the same width */
         .engagment-button {
           display: flex;
+          flex-direction: column;
           justify-content: center;
           align-items: center;
-          gap: clamp(2rem, 20vw, 20rem);
+          gap: 0.85rem;
           margin: 1rem 0 0.75rem;
           z-index: 10;
         }
-        @media (max-width: 700px) { .engagment-button { gap: 1.5rem; } }
+        .engagment-button .glass-button {
+          width: clamp(190px, 16vw, 240px);
+          justify-content: center;
+        }
 
         .glass-button {
           --bg-color: rgba(255, 255, 255, 0.22);
@@ -481,6 +545,40 @@ export default function Hero() {
         @media (max-width: 1000px) {
           .heroSloganDark { display: none; }
         }
+
+        /* "KEEP PROTECT REIMAGINE" statement — sits ON the main background (under
+           the bg2 dissolve, no positive z-index), right-aligned lower-right.
+           Letters are stroke-only outlines whose INSIDE reveals the bg1 image.
+           --statement-size = resize knob, --statement-font = swap the typeface. */
+        .hero-statement {
+          --statement-size: clamp(2.6rem, 7vw, 8rem);
+          --statement-font: 'ICA Rubrik', 'Anton', 'Barlow Condensed', sans-serif;
+          position: absolute;
+          right: 4%;
+          bottom: 22%;
+          text-align: right;
+          pointer-events: none;
+          font-family: var(--statement-font);
+          font-weight: 800;
+          text-transform: uppercase;
+          font-size: var(--statement-size);
+          line-height: 0.92;
+          letter-spacing: -0.01em;
+
+          /* Glyph fill is fully transparent, so the ACTUAL hero background (the live
+             fluid canvas directly behind) shows through the letters — no image is
+             used. Only the stroke outline is drawn. */
+          color: transparent;
+          -webkit-text-fill-color: transparent;
+          -webkit-text-stroke: 1.7px rgba(255, 255, 255, 0.92);
+
+          will-change: transform, opacity;
+        }
+        .hero-statement .hs-mask { display: block; overflow: hidden; }
+        .hero-statement .hs-line { display: block; will-change: transform; }
+        @media (max-width: 700px) {
+          .hero-statement { --statement-size: clamp(2rem, 12vw, 3.4rem); right: 6%; bottom: 24%; -webkit-text-stroke-width: 1.1px; }
+        }
       `}</style>
 
       <BasicNavigationBar />
@@ -506,7 +604,7 @@ export default function Hero() {
             <h1>{info.creativeFirstName}</h1>
           </div>
 
-          <div className="engagment-button" style={{ marginTop: "200px" }}>
+          <div className="engagment-button" style={{ marginTop: "200px" }} ref={ctaWrapRef}>
             <GlassButton href={info.ctaPrimary.href}>{info.ctaPrimary.label}</GlassButton>
             <GlassButton href={info.ctaSecondary.href}>{info.ctaSecondary.label}</GlassButton>
           </div>
@@ -514,6 +612,17 @@ export default function Hero() {
           <p className="heroSlogan" ref={headlineRef} aria-label={info.slogan}>
             {heroHeadlineText}
           </p>
+
+          {/* KEEP PROTECT REIMAGINE — on the MAIN background (this header layer,
+              under the bg2 dissolve). Stroke-outline letters reveal the bg1 image;
+              rises in after the splash and drifts/fades with scroll. */}
+          <div className="hero-statement" ref={statementRef} aria-label={info.heroStatement.join(" ")}>
+            {info.heroStatement.map((word, i) => (
+              <span className="hs-mask" key={i}>
+                <span className="hs-line">{word}</span>
+              </span>
+            ))}
+          </div>
         </div>
 
         <canvas className="hero-canvas" ref={canvasRef}></canvas>
