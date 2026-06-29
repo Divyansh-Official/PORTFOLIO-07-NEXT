@@ -1,5 +1,6 @@
 import BasicNavigationBar from "../components/nav/navBar";
 import info from "../data/information.json";
+import icons from "../data/icons.json";
 import Introduction from "./Introduction";
 import { useRef, useState, useEffect } from "react";
 import gsap from "gsap";
@@ -13,9 +14,11 @@ import { useFluidEffect } from "../hooks/useFluidEffect";
 const GlassButton = ({
   children,
   href,
+  icon,
 }: {
   children: React.ReactNode;
   href?: string;
+  icon?: string;
 }) => {
   const handleMouseMove = (e: React.MouseEvent<HTMLElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -47,6 +50,10 @@ const GlassButton = ({
       <div className="glass-overlay" />
       <div className="glass-specular" />
       <div className="glass-content">
+        {icon && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img className="glass-icon" src={icon} alt="" aria-hidden="true" />
+        )}
         <span>{children}</span>
       </div>
     </>
@@ -432,18 +439,24 @@ export default function Hero() {
           .header-name-right { display: none; }
         }
 
-        /* Contact stacked directly below Hire Me, both the same width */
+        /* Contact stacked directly below Hire Me, both the same width.
+           ▼ POSITION KNOBS — move the whole pair:
+             --cta-x  horizontal  (negative = left,  positive = right)
+             --cta-y  vertical    (positive = down,  negative = up) */
         .engagment-button {
+          --cta-x: -17vw;
+          --cta-y: 100px;
           display: flex;
           flex-direction: column;
           justify-content: center;
           align-items: center;
-          gap: 0.85rem;
-          margin: 1rem 0 0.75rem;
+          gap: 0.7rem;
           z-index: 10;
+          transform: translate(var(--cta-x), var(--cta-y));
         }
         .engagment-button .glass-button {
-          width: clamp(190px, 16vw, 240px);
+          width: clamp(150px, 11vw, 178px);   /* narrower breadth */
+          padding: 10px 18px;
           justify-content: center;
         }
 
@@ -482,11 +495,25 @@ export default function Hero() {
         .glass-content {
           position: relative;
           z-index: 4;
+          display: inline-flex;
+          align-items: center;
+          gap: 0.5rem;
           color: var(--text);
           font-family: "Instrument Sans", sans-serif;
           font-weight: 600;
-          font-size: 1rem;
+          font-size: 0.95rem;
           letter-spacing: 0.02em;
+        }
+        /* Scoped selector (.glass-content .glass-icon) so it out-specifies the
+           global ".hero img { width:100% }" rule that was stretching the icon.
+           --cta-icon is the size knob for the button icons. */
+        .glass-content .glass-icon {
+          --cta-icon: 1.05em;
+          width: var(--cta-icon);
+          height: var(--cta-icon);
+          object-fit: contain;
+          display: block;
+          flex: none;
         }
 
         .hero-canvas { position: absolute; bottom: 0; width: 100%; height: 100%; pointer-events: none; }
@@ -604,9 +631,9 @@ export default function Hero() {
             <h1>{info.creativeFirstName}</h1>
           </div>
 
-          <div className="engagment-button" style={{ marginTop: "200px" }} ref={ctaWrapRef}>
-            <GlassButton href={info.ctaPrimary.href}>{info.ctaPrimary.label}</GlassButton>
-            <GlassButton href={info.ctaSecondary.href}>{info.ctaSecondary.label}</GlassButton>
+          <div className="engagment-button" ref={ctaWrapRef}>
+            <GlassButton href={info.ctaPrimary.href} icon={icons.hire}>{info.ctaPrimary.label}</GlassButton>
+            <GlassButton href={info.ctaSecondary.href} icon={icons.contact}>{info.ctaSecondary.label}</GlassButton>
           </div>
 
           <p className="heroSlogan" ref={headlineRef} aria-label={info.slogan}>
