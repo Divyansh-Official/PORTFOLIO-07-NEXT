@@ -79,22 +79,39 @@ export default function About() {
       // reference. START_SCALE = how zoomed/off-screen the cutouts begin (raise it
       // if any cutout peeks at the top); DOCKED_SCALE = the final docked size.
       const START_SCALE = 1.3;
-      // ▼▼ DOCKED CARD SIZE — this is the knob. Lower = smaller docked card,
-      //    higher = bigger. (1 = full screen; 0.46 ≈ a touch under half.)
+      // ▼▼ DOCKED CARD SIZE — lower = smaller docked card, higher = bigger.
       const DOCKED_SCALE = 0.36;
-      // 3D tilt the card picks up as it docks (degrees, reached at the end). The
-      // .ab-collapse perspective makes it read as a depth tilt toward the z-axis.
+      // Back face fills the screen at the very end (cutouts off-screen, like START).
+      const END_SCALE = 1.35;
+      // Dock 3D tilt (degrees): rotateX + a rotateY turn during the shrink.
+      // POSITIVE y → the card tilts from the RIGHT side (right edge recedes) as it
+      // shrinks — the pre-flip pose. The flip then continues from this tilt down to
+      // -180 (set in the flip math), so it still turns LEFT → RIGHT.
       const TILT = { x: -7, y: 13 };
+
+      // ── Sequence thresholds over the pinned scroll (progress 0 → 1) ──────────
+      //   0 → P_SHRINK : card shrinks to the docked size (cutouts reveal) + tilts
+      //   P_SHRINK → P_FLIP_A : docked hold (cursor-magnet window)
+      //   P_FLIP_A → P_FLIP_B : card flips on Y, revealing the BACK face
+      //   P_UP → 1 : the back face scales up to fill the screen
+      // The flip range (P_FLIP_A → P_FLIP_B) is WIDE so the rotation is slow and
+      // scroll-controlled rather than snappy.
+      const P_SHRINK = 0.26;
+      const P_FLIP_A = 0.40;
+      const P_FLIP_B = 0.80;
+      const P_UP     = 0.80;
+      // Cursor magnet live from late-shrink through the whole docked hold.
+      const MAGNET_FROM = 0.20;
 
       // Apply the fixed notched clip once, and re-measure/re-apply on refresh.
       const setClip = () => { card.style.setProperty("--card-clip", `path("${buildPath(1)}")`); };
       setClip();
-      gsap.set(card, { scale: START_SCALE, transformPerspective: 1200, force3D: true });
+      gsap.set(card, { scale: START_SCALE, force3D: true });
 
       ScrollTrigger.create({
         trigger: ".ab-collapse",
         start: "top top",
-        end: "+=140%",
+        end: "+=320%",   // longer pin: shrink + dock + flip + scale-up all happen here
         pin: ".ab-collapse",
         pinSpacing: true,
         anticipatePin: 1,
@@ -103,25 +120,42 @@ export default function About() {
         onUpdate: (self) => {
           const p = self.progress;
           prog = p;
-          const e = gsap.parseEase("power2.inOut")(p);
+          const ease = gsap.parseEase("power2.inOut");
+          const flipEase = gsap.parseEase("sine.inOut");   // gentlest ease → smooth, controlled flip
 
-          // Scale shrinks (cutouts reveal) + a 3D tilt grows toward the dock. The
-          // 3D transform also promotes the card to its own GPU layer, which is what
-          // smooths out the scale glitch. Rotation is owned solely by scroll here;
-          // the magnet only translates (x/y) so the two never fight.
-          gsap.set(card, {
-            scale: START_SCALE - e * (START_SCALE - DOCKED_SCALE),
-            rotateX: TILT.x * e,
-            rotateY: TILT.y * e,
-            transformPerspective: 1200,
-            force3D: true,
-          });
+          // ── SCALE: shrink → docked · hold · scale-up to fill the screen ──────
+          let scale: number;
+          if (p <= P_SHRINK) {
+            scale = START_SCALE - ease(p / P_SHRINK) * (START_SCALE - DOCKED_SCALE);
+          } else if (p < P_UP) {
+            scale = DOCKED_SCALE;
+          } else {
+            scale = DOCKED_SCALE + ease((p - P_UP) / (1 - P_UP)) * (END_SCALE - DOCKED_SCALE);
+          }
+
+          // ── ROTATE Y: dock tilt (0 → TILT.y) flows into the flip, turning the
+          //    card LEFT → RIGHT to -180° on a smooth, scroll-controlled ease ─────
+          let rotY: number;
+          if (p <= P_SHRINK) rotY = ease(p / P_SHRINK) * TILT.y;        // tilt eases in
+          else if (p < P_FLIP_A) rotY = TILT.y;                          // docked tilt holds
+          else if (p < P_FLIP_B) rotY = TILT.y + flipEase((p - P_FLIP_A) / (P_FLIP_B - P_FLIP_A)) * (-180 - TILT.y);
+          else rotY = -180;                                              // back fully faces us
+
+          // ── TILT (rotateX): in during shrink, hold, out as it fills the screen ─
+          let tiltX: number;
+          if (p <= P_SHRINK) tiltX = ease(p / P_SHRINK) * TILT.x;
+          else if (p < P_UP) tiltX = TILT.x;
+          else tiltX = TILT.x * (1 - ease((p - P_UP) / (1 - P_UP)));
+
+          gsap.set(card, { scale, rotateX: tiltX, rotateY: rotY, force3D: true });
 
           // black → white fade TARGET (bgTick eases the painted bg toward it)
           const bgP = gsap.utils.clamp(0, 1, (p - BG_FADE.start) * BG_FADE.speed);
           bgTarget = bgEase(bgP);
 
-          if (p >= 0.92) docked = true;
+          // cursor magnet only in the dock window (after shrink, before the flip)
+          const magnetOn = p >= MAGNET_FROM && p < P_FLIP_A;
+          if (magnetOn) docked = true;
           else if (docked) {
             gsap.to(card, { x: 0, y: 0, duration: 0.35, ease: "power3.out" });
             docked = false;
@@ -129,9 +163,9 @@ export default function About() {
         },
       });
 
-      // ── Magnetic cursor response (only once docked) ────────────────────────
+      // ── Magnetic cursor response (only in the docked window, before the flip) ─
       const onMove = (ev: MouseEvent) => {
-        if (prog < 0.92) return;
+        if (prog < MAGNET_FROM || prog >= P_FLIP_A) return;
         const rect = card.getBoundingClientRect();
         const dx = (ev.clientX - (rect.left + rect.width / 2)) / rect.width;
         const dy = (ev.clientY - (rect.top + rect.height / 2)) / rect.height;
@@ -207,8 +241,32 @@ export default function About() {
           position: absolute;
           inset: 0;
           transform-origin: center center;
+          transform-style: preserve-3d;   /* front + back faces live in 3D for the flip */
           will-change: transform;
+        }
+        /* Two faces of the card: front = the video card, back = the new bg3 section.
+           backface-visibility hides whichever face is turned away during the flip. */
+        .hc-front, .hc-back {
+          position: absolute;
+          inset: 0;
+          -webkit-backface-visibility: hidden;
           backface-visibility: hidden;
+        }
+        .hc-back { transform: rotateY(180deg); }
+        .hc-back-clip {
+          position: absolute;
+          inset: 0;
+          clip-path: var(--card-clip, none);   /* same notched/bevel shape as the front */
+          overflow: hidden;
+          background: #0b0b12;
+        }
+        .hc-back-clip img {
+          position: absolute;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          display: block;
         }
         /* Shadow on its OWN solid shape, NOT on the card — so the browser never
            re-rasterizes the playing video to recompute the drop-shadow each frame
@@ -271,18 +329,29 @@ export default function About() {
 
       <div className="ab-collapse">
         <div className="hc-card">
-          <div className="hc-shadow" />
-          <div className="hc-clip">
-            <video
-              src="/videos/bg_hero.mp4"
-              autoPlay
-              muted
-              loop
-              playsInline
-              preload="auto"
-            />
+          {/* FRONT — the video card that shrinks/docks */}
+          <div className="hc-front">
+            <div className="hc-shadow" />
+            <div className="hc-clip">
+              <video
+                src="/videos/bg_hero.mp4"
+                autoPlay
+                muted
+                loop
+                playsInline
+                preload="auto"
+              />
+            </div>
+            <div className="hc-card-content" />
           </div>
-          <div className="hc-card-content" />
+
+          {/* BACK — the new section revealed by the flip (bg3 image for now) */}
+          <div className="hc-back">
+            <div className="hc-back-clip">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/hero/bg3.png" alt="" />
+            </div>
+          </div>
         </div>
       </div>
 
