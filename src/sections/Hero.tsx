@@ -582,7 +582,7 @@ export default function Hero() {
           --statement-font: 'ICA Rubrik', 'Anton', 'Barlow Condensed', sans-serif;
           position: absolute;
           right: 4%;
-          bottom: 22%;
+          bottom: 50%;
           text-align: right;
           pointer-events: none;
           font-family: var(--statement-font);

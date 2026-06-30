@@ -349,7 +349,7 @@ export default function About() {
           <div className="hc-back">
             <div className="hc-back-clip">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/hero/bg3.png" alt="" />
+              <img src="/hero/bg4.png" alt="" />
             </div>
           </div>
         </div>
