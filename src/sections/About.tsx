@@ -93,13 +93,14 @@ export default function About() {
       // Back face fills the screen at the very end (cutouts off-screen, like START).
       const END_SCALE = 1.08;
       // How much to scale the (contain-fit) image up so it COVERS the square once
-      // docked — closing the top/bottom letterbox bands. (2:1 image in a square ≈ 1.9.)
-      const IMG_COVER = 1.9;
+      // docked — closing the top/bottom letterbox bands. Raised to absorb any
+      // transparent margin baked into the SVG. (Raise further if bands remain.)
+      const IMG_COVER = 2.5;
       // Dock 3D tilt (degrees): rotateX + a rotateY turn during the shrink.
       // POSITIVE y → the card tilts from the RIGHT side (right edge recedes) as it
       // shrinks — the pre-flip pose. The flip then continues from this tilt down to
       // -180 (set in the flip math), so it still turns LEFT → RIGHT.
-      const TILT = { x: -7, y: 13 };
+      const TILT = { x: -13, y: 17 };
 
       // ── Sequence thresholds over the pinned scroll (progress 0 → 1) ──────────
       //   0 → P_SHRINK : card shrinks to the docked size (cutouts reveal) + tilts
