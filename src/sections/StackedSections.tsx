@@ -22,14 +22,38 @@ const Contact = dynamic(() => import("./Contact"));
 export default function StackedSections() {
   return (
     <>
-      <Hero />
-      <Marquee />
-      <About />
-      <Skills />
-      <Projects />
-      <Qualifications />
-      <Achievements />
-      <Contact />
+      <style>{`
+        /* Footer reveal: the footer is FIXED at the bottom, BEHIND the page content.
+           The page content is opaque (z-index 1) with a 100vh bottom margin, so as
+           you scroll past it, it slides UP and OVER the fixed footer — uncovering it
+           from underneath (the StringTune "footer shifting" reveal). */
+        .site-content {
+          position: relative;
+          z-index: 1;
+          background: var(--bg);
+          margin-bottom: 100vh;
+        }
+        .footer-reveal {
+          position: fixed;
+          left: 0; right: 0; bottom: 0;
+          height: 100vh;
+          z-index: 0;
+        }
+      `}</style>
+
+      <div className="site-content">
+        <Hero />
+        <Marquee />
+        <About />
+        <Skills />
+        <Projects />
+        <Qualifications />
+        <Achievements />
+      </div>
+
+      <div className="footer-reveal">
+        <Contact />
+      </div>
     </>
   );
 }

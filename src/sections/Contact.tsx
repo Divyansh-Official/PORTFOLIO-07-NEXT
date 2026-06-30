@@ -12,14 +12,19 @@ export default function Contact() {
   const sectionRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
     const ctx = gsap.context(() => {
-      gsap.from(".ct-reveal", {
-        y: 50,
-        opacity: 0,
-        duration: 1,
-        ease: "power3.out",
-        stagger: 0.09,
-        scrollTrigger: { trigger: sectionRef.current, start: "top 75%" },
+      // The footer is FIXED behind .site-content (which has a 100vh bottom margin).
+      // Drive --p (0 → 1) as that margin scrolls past — i.e. as the page content
+      // slides up and UNCOVERS the fixed footer from underneath. The CSS uses --p
+      // to rise the content into place and lift the dark veil off it.
+      ScrollTrigger.create({
+        trigger: ".site-content",
+        start: "bottom bottom",
+        end: "bottom top",
+        scrub: true,
+        onUpdate: (self) => el.style.setProperty("--p", self.progress.toFixed(4)),
       });
     }, sectionRef);
     return () => ctx.revert();
@@ -31,20 +36,53 @@ export default function Contact() {
     <section className="contact" id="contact" ref={sectionRef}>
       <style>{`
         .contact {
+          /* Fills the fixed-footer (100vh). --p (0→1) is driven by scroll;
+             --ft-shift = how far the content rises into place (parallax). */
+          --p: 0;
+          --ft-shift: 14vh;
+          /* RED footer — hero crimson tone. The theme tokens are overridden to
+             white-based here so all the (previously crimson) accents stay legible. */
+          --ink: #ffffff;
+          --ink-dim: rgba(255, 255, 255, 0.78);
+          --ink-faint: rgba(255, 255, 255, 0.55);
+          --accent: #ffffff;
+          --accent-2: #ffd9dc;
+          --line: rgba(255, 255, 255, 0.24);
           position: relative;
-          background: var(--bg-soft);
+          height: 100%;
+          display: flex;
+          align-items: center;
+          background: #650b0e;
           color: var(--ink);
-          padding: clamp(6rem, 16vh, 14rem) clamp(1.25rem, 5vw, 6rem) 0;
+          padding: clamp(2rem, 8vh, 5rem) clamp(1.25rem, 5vw, 6rem);
           overflow: hidden;
-          border-top: 1px solid var(--line-soft);
+          border-top: 1px solid rgba(255, 255, 255, 0.14);
         }
         .contact::before {
           content: "";
           position: absolute; inset: 0;
-          background: radial-gradient(60% 60% at 50% 0%, rgba(230,0,18,0.12), transparent 70%);
+          background: radial-gradient(60% 60% at 50% 0%, rgba(255,255,255,0.10), transparent 70%);
           pointer-events: none;
         }
-        .ct-inner { position: relative; max-width: 1500px; margin: 0 auto; }
+        /* Dark veil that LIFTS off the footer as it scrolls into view (1 → 0). */
+        .contact::after {
+          content: "";
+          position: absolute; inset: 0;
+          background: #000;
+          opacity: calc(1 - var(--p));
+          pointer-events: none;
+          z-index: 5;
+        }
+        /* Content rises into place as the fixed footer is uncovered. */
+        .ct-inner {
+          position: relative;
+          z-index: 1;
+          width: 100%;
+          max-width: 1500px;
+          margin: 0 auto;
+          transform: translate3d(0, calc((1 - var(--p)) * var(--ft-shift)), 0);
+          will-change: transform;
+        }
 
         .ct-kicker {
           display: inline-flex; align-items: center; gap: 0.6rem;
@@ -60,16 +98,16 @@ export default function Contact() {
         }
         .ct-title {
           font-family: "Instrument Serif", serif; font-weight: 500;
-          font-size: clamp(2.8rem, 10vw, 9rem); line-height: 0.95; letter-spacing: -0.02em;
+          font-size: clamp(2.4rem, 7vw, 5.5rem); line-height: 0.95; letter-spacing: -0.02em;
           text-transform: uppercase; margin: 0.6rem 0 0;
         }
         .ct-title em { font-style: italic; color: var(--accent-2); }
 
         .ct-email {
           display: inline-block;
-          margin: clamp(2rem, 5vh, 3.5rem) 0 0;
+          margin: clamp(1.2rem, 3vh, 2.2rem) 0 0;
           font-family: "Instrument Serif", serif;
-          font-size: clamp(1.5rem, 5vw, 3.5rem);
+          font-size: clamp(1.5rem, 5vw, 3rem);
           color: var(--ink);
           text-decoration: none;
           position: relative;
@@ -88,7 +126,7 @@ export default function Contact() {
 
         .ct-socials {
           display: flex; flex-wrap: wrap; gap: clamp(0.75rem, 2vw, 1.5rem);
-          margin-top: clamp(2.5rem, 6vh, 4rem);
+          margin-top: clamp(1.2rem, 3vh, 2.2rem);
         }
         .ct-social {
           display: flex; flex-direction: column; gap: 0.25rem;
@@ -99,7 +137,7 @@ export default function Contact() {
           min-width: 11rem;
           transition: border-color 0.3s ease, transform 0.3s var(--ease-glide), background 0.3s ease;
         }
-        .ct-social:hover { border-color: rgba(230,0,18,0.45); transform: translateY(-4px); background: var(--bg-elev); }
+        .ct-social:hover { border-color: rgba(255,255,255,0.6); transform: translateY(-4px); background: rgba(255,255,255,0.08); }
         .ct-social-label {
           font-family: "Geist Mono", monospace;
           font-size: 0.68rem; letter-spacing: 0.18em; text-transform: uppercase;
@@ -109,8 +147,8 @@ export default function Contact() {
 
         .ct-footer {
           position: relative;
-          margin-top: clamp(4rem, 10vh, 8rem);
-          padding: 2rem 0;
+          margin-top: clamp(1.5rem, 4vh, 3rem);
+          padding: 1.4rem 0 0;
           border-top: 1px solid var(--line);
           display: flex;
           flex-wrap: wrap;

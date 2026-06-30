@@ -7,6 +7,12 @@ import data from "../data/about.json";
 
 gsap.registerPlugin(ScrollTrigger);
 
+// Copy shown ON the flipped (back) face, inside the clip card. Edit freely.
+const BACK = {
+  tag: "002 — WHO I AM",
+  title: "I build the hard middle of the system — and the apps that ride on it.",
+};
+
 export default function About() {
   const sectionRef = useRef<HTMLElement>(null);
 
@@ -14,6 +20,7 @@ export default function About() {
     const ctx = gsap.context(() => {
       const card = sectionRef.current?.querySelector(".hc-card") as HTMLElement | null;
       if (!card) return;
+      const backContent = sectionRef.current?.querySelector(".hc-back-content") as HTMLElement | null;
 
       let W = card.offsetWidth;
       let H = card.offsetHeight;
@@ -100,6 +107,8 @@ export default function About() {
       const P_FLIP_A = 0.40;
       const P_FLIP_B = 0.80;
       const P_UP     = 0.80;
+      // Back-face content fades in here (after the flip, as the card opens up).
+      const CONTENT_IN = 0.86;
       // Cursor magnet live from late-shrink through the whole docked hold.
       const MAGNET_FROM = 0.20;
 
@@ -107,6 +116,7 @@ export default function About() {
       const setClip = () => { card.style.setProperty("--card-clip", `path("${buildPath(1)}")`); };
       setClip();
       gsap.set(card, { scale: START_SCALE, force3D: true });
+      if (backContent) gsap.set(backContent, { opacity: 0 });
 
       ScrollTrigger.create({
         trigger: ".ab-collapse",
@@ -148,6 +158,15 @@ export default function About() {
           else tiltX = TILT.x * (1 - ease((p - P_UP) / (1 - P_UP)));
 
           gsap.set(card, { scale, rotateX: tiltX, rotateY: rotY, force3D: true });
+
+          // Back-face content lives INSIDE the clip card. Counter-scale it by the
+          // card's scale so it stays at a constant, crisp size (no zoom-snap) while
+          // the card grows, and fade it in after the flip — so the new section is
+          // revealed inside the card with no separate element flashing in.
+          if (backContent) {
+            const cin = gsap.utils.clamp(0, 1, (p - CONTENT_IN) / (1 - CONTENT_IN));
+            gsap.set(backContent, { scale: 1 / scale, opacity: cin, force3D: true });
+          }
 
           // black → white fade TARGET (bgTick eases the painted bg toward it)
           const bgP = gsap.utils.clamp(0, 1, (p - BG_FADE.start) * BG_FADE.speed);
@@ -268,6 +287,38 @@ export default function About() {
           object-fit: cover;
           display: block;
         }
+        /* New-section content, INSIDE the clip card. JS counter-scales it (so it
+           never zooms with the card) and fades it in after the flip. */
+        .hc-back-content {
+          position: absolute;
+          inset: 0;
+          z-index: 1;
+          display: flex;
+          flex-direction: column;
+          justify-content: flex-end;
+          gap: 1rem;
+          padding: clamp(2rem, 6vw, 6rem);
+          transform-origin: center center;
+          color: #fff;
+          pointer-events: none;
+        }
+        .hb-tag {
+          font-family: "Geist Mono", monospace;
+          font-size: 0.72rem;
+          letter-spacing: 0.28em;
+          text-transform: uppercase;
+          color: var(--accent-2, #ff2d3f);
+        }
+        .hb-title {
+          font-family: "Instrument Serif", serif;
+          font-weight: 500;
+          font-size: clamp(2rem, 4.5vw, 4.6rem);
+          line-height: 1.05;
+          letter-spacing: -0.01em;
+          max-width: 22ch;
+          margin: 0;
+          text-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+        }
         /* Shadow on its OWN solid shape, NOT on the card — so the browser never
            re-rasterizes the playing video to recompute the drop-shadow each frame
            (that was the scale-up/down glitch). Both layers share --card-clip. */
@@ -345,11 +396,16 @@ export default function About() {
             <div className="hc-card-content" />
           </div>
 
-          {/* BACK — the new section revealed by the flip (bg3 image for now) */}
+          {/* BACK — the new section revealed by the flip: image + its content, all
+              inside the clip card (revealed in place, no separate element). */}
           <div className="hc-back">
             <div className="hc-back-clip">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/hero/bg4.png" alt="" />
+              <div className="hc-back-content">
+                <span className="hb-tag">{BACK.tag}</span>
+                <h2 className="hb-title">{BACK.title}</h2>
+              </div>
             </div>
           </div>
         </div>
