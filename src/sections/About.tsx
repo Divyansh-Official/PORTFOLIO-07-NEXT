@@ -24,8 +24,7 @@ export default function About() {
 
       let W = card.offsetWidth;
       let H = card.offsetHeight;
-      let prog = 0;
-      let docked = false;
+      let inDock = false;   // true while the card is docked (card-magnet window)
 
       const section = sectionRef.current!;
       // Background fade: the site bg eases black → white as bg3 collapses into the
@@ -85,11 +84,17 @@ export default function About() {
       // those cutouts into view — they are never grown/animated, exactly like the
       // reference. START_SCALE = how zoomed/off-screen the cutouts begin (raise it
       // if any cutout peeks at the top); DOCKED_SCALE = the final docked size.
-      const START_SCALE = 1.3;
-      // ▼▼ DOCKED CARD SIZE — lower = smaller docked card, higher = bigger.
-      const DOCKED_SCALE = 0.36;
+      // The card is a 100vmax SQUARE. Because it's taller than a 16:9 screen, it
+      // only needs a hair over 1× to cover the width with the cutouts off-screen —
+      // keeping the image barely zoomed so its detail stays visible.
+      const START_SCALE = 1.05;
+      // ▼▼ DOCKED CARD SIZE — lower = smaller docked square, higher = bigger.
+      const DOCKED_SCALE = 0.20;
       // Back face fills the screen at the very end (cutouts off-screen, like START).
-      const END_SCALE = 1.35;
+      const END_SCALE = 1.08;
+      // How much to scale the (contain-fit) image up so it COVERS the square once
+      // docked — closing the top/bottom letterbox bands. (2:1 image in a square ≈ 1.9.)
+      const IMG_COVER = 1.9;
       // Dock 3D tilt (degrees): rotateX + a rotateY turn during the shrink.
       // POSITIVE y → the card tilts from the RIGHT side (right edge recedes) as it
       // shrinks — the pre-flip pose. The flip then continues from this tilt down to
@@ -109,14 +114,68 @@ export default function About() {
       const P_UP     = 0.80;
       // Back-face content fades in here (after the flip, as the card opens up).
       const CONTENT_IN = 0.86;
-      // Cursor magnet live from late-shrink through the whole docked hold.
-      const MAGNET_FROM = 0.20;
+      // Card magnet activates here — during the late shrink, once the cutouts show
+      // (not only when fully docked).
+      const MAGNET_FROM = 0.12;
+
+      // The image must reach full COVER *before* the square is small enough to show
+      // top/bottom bands — that happens at card scale = viewport-height / card-side
+      // (= 1/aspect, since the card is a 100vmax square). Compute from the screen.
+      let coverBy = 0.68;
+      const computeCoverBy = () => {
+        const a = window.innerWidth / Math.max(window.innerHeight, 1);
+        coverBy = a >= 1 ? Math.min(0.9, 1 / a + 0.12) : 0.9;
+      };
+      computeCoverBy();
 
       // Apply the fixed notched clip once, and re-measure/re-apply on refresh.
       const setClip = () => { card.style.setProperty("--card-clip", `path("${buildPath(1)}")`); };
       setClip();
       gsap.set(card, { scale: START_SCALE, force3D: true });
       if (backContent) gsap.set(backContent, { opacity: 0 });
+
+      // ── Smoothed scale ───────────────────────────────────────────────────────
+      // onUpdate sets the scroll TARGET; this ticker glides the scale toward it
+      // each frame (lerp) so the scale-up/down reads silky + lag-free instead of
+      // tracking raw scroll jitter. Rotation stays scroll-exact (precise flip).
+      let tScale = START_SCALE, cScale = START_SCALE, tRotY = 0, tTiltX = 0;
+      const SMOOTH = 0.15;
+      const transformTick = () => {
+        cScale += (tScale - cScale) * SMOOTH;
+        gsap.set(card, { scale: cScale, rotateX: tTiltX, rotateY: tRotY, force3D: true });
+        if (backContent) gsap.set(backContent, { scale: 1 / cScale });
+        // Image fit: contain (whole panorama) when the card is big → cover (fills
+        // the square, no bands) as it shrinks. Driven off the SAME smoothed scale.
+        const it = gsap.utils.clamp(0, 1, (START_SCALE - cScale) / (START_SCALE - coverBy));
+        const imgScale = 1 + it * (IMG_COVER - 1);
+        if (fg) gsap.set(fg, { scale: imgScale });
+        if (bg) gsap.set(bg, { scale: imgScale });
+      };
+      gsap.ticker.add(transformTick);
+
+      // ── Cursor parallax on the front image layers (foreground moves more than
+      //    background → depth). quickTo lerps for buttery, precise tracking. ──────
+      const fg = card.querySelector(".hc-fg-img") as HTMLElement | null;
+      const bg = card.querySelector(".hc-bg-img") as HTMLElement | null;
+      const fgX = fg ? gsap.quickTo(fg, "x", { duration: 0.7, ease: "power3.out" }) : null;
+      const fgY = fg ? gsap.quickTo(fg, "y", { duration: 0.7, ease: "power3.out" }) : null;
+      const bgX = bg ? gsap.quickTo(bg, "x", { duration: 0.95, ease: "power3.out" }) : null;
+      const bgY = bg ? gsap.quickTo(bg, "y", { duration: 0.95, ease: "power3.out" }) : null;
+      // The whole card also leans toward the cursor (magnetic) while docked, with
+      // the image layers parallaxing against it for depth.
+      const cardX = gsap.quickTo(card, "x", { duration: 0.6, ease: "power3.out" });
+      const cardY = gsap.quickTo(card, "y", { duration: 0.6, ease: "power3.out" });
+      // Listen on the WINDOW so the parallax responds to the cursor ALL the time —
+      // at every scale (shrinking, docked, full-screen), not just while docked.
+      const onMove = (ev: MouseEvent) => {
+        const rect = card.getBoundingClientRect();
+        const dx = gsap.utils.clamp(-0.5, 0.5, (ev.clientX - (rect.left + rect.width / 2)) / rect.width);
+        const dy = gsap.utils.clamp(-0.5, 0.5, (ev.clientY - (rect.top + rect.height / 2)) / rect.height);
+        fgX?.(-dx * 50); fgY?.(-dy * 18);     // foreground (panorama → mostly horizontal)
+        bgX?.(-dx * 20); bgY?.(-dy * 7);      // background (subtler depth)
+        if (inDock) { cardX(dx * 40); cardY(dy * 40); }   // card magnet — toward cursor, docked only
+      };
+      window.addEventListener("mousemove", onMove);
 
       ScrollTrigger.create({
         trigger: ".ab-collapse",
@@ -126,10 +185,9 @@ export default function About() {
         pinSpacing: true,
         anticipatePin: 1,
         invalidateOnRefresh: true,
-        onRefresh: () => { W = card.offsetWidth; H = card.offsetHeight; setClip(); },
+        onRefresh: () => { W = card.offsetWidth; H = card.offsetHeight; setClip(); computeCoverBy(); },
         onUpdate: (self) => {
           const p = self.progress;
-          prog = p;
           const ease = gsap.parseEase("power2.inOut");
           const flipEase = gsap.parseEase("sine.inOut");   // gentlest ease → smooth, controlled flip
 
@@ -157,42 +215,30 @@ export default function About() {
           else if (p < P_UP) tiltX = TILT.x;
           else tiltX = TILT.x * (1 - ease((p - P_UP) / (1 - P_UP)));
 
-          gsap.set(card, { scale, rotateX: tiltX, rotateY: rotY, force3D: true });
+          // hand the scroll-driven values to the smoothed transform ticker
+          tScale = scale; tRotY = rotY; tTiltX = tiltX;
 
-          // Back-face content lives INSIDE the clip card. Counter-scale it by the
-          // card's scale so it stays at a constant, crisp size (no zoom-snap) while
-          // the card grows, and fade it in after the flip — so the new section is
-          // revealed inside the card with no separate element flashing in.
+          // Back-face content lives INSIDE the clip card — fade it in after the flip
+          // (its counter-scale is applied in the smoothed transform ticker).
           if (backContent) {
             const cin = gsap.utils.clamp(0, 1, (p - CONTENT_IN) / (1 - CONTENT_IN));
-            gsap.set(backContent, { scale: 1 / scale, opacity: cin, force3D: true });
+            gsap.set(backContent, { opacity: cin });
           }
 
           // black → white fade TARGET (bgTick eases the painted bg toward it)
           const bgP = gsap.utils.clamp(0, 1, (p - BG_FADE.start) * BG_FADE.speed);
           bgTarget = bgEase(bgP);
 
-          // cursor magnet only in the dock window (after shrink, before the flip)
-          const magnetOn = p >= MAGNET_FROM && p < P_FLIP_A;
-          if (magnetOn) docked = true;
-          else if (docked) {
-            gsap.to(card, { x: 0, y: 0, duration: 0.35, ease: "power3.out" });
-            docked = false;
-          }
+          // Grid-line frame fades in once the card has shrunk to its docked size
+          // (the threshold before the flip), and stays on for the rest of the page.
+          document.documentElement.classList.toggle("grid-on", p >= P_SHRINK);
+
+          // card magnet active from the late shrink (cutouts visible) until the flip
+          const nowDock = p >= MAGNET_FROM && p < P_FLIP_A;
+          if (inDock && !nowDock) { cardX(0); cardY(0); }
+          inDock = nowDock;
         },
       });
-
-      // ── Magnetic cursor response (only in the docked window, before the flip) ─
-      const onMove = (ev: MouseEvent) => {
-        if (prog < MAGNET_FROM || prog >= P_FLIP_A) return;
-        const rect = card.getBoundingClientRect();
-        const dx = (ev.clientX - (rect.left + rect.width / 2)) / rect.width;
-        const dy = (ev.clientY - (rect.top + rect.height / 2)) / rect.height;
-        gsap.to(card, { x: dx * 46, y: dy * 46, duration: 0.6, ease: "power3.out" });
-      };
-      const onLeave = () => gsap.to(card, { x: 0, y: 0, duration: 0.7, ease: "power3.out" });
-      card.addEventListener("mousemove", onMove);
-      card.addEventListener("mouseleave", onLeave);
 
       // ── About content reveals ──────────────────────────────────────────────
       // start values are early ("top 90/95%") so the entrance fires as soon as the
@@ -219,9 +265,10 @@ export default function About() {
 
       return () => {
         gsap.ticker.remove(bgTick);
+        gsap.ticker.remove(transformTick);
         window.removeEventListener("load", refresh);
-        card.removeEventListener("mousemove", onMove);
-        card.removeEventListener("mouseleave", onLeave);
+        window.removeEventListener("mousemove", onMove);
+        document.documentElement.classList.remove("grid-on");
       };
     }, sectionRef);
 
@@ -252,13 +299,17 @@ export default function About() {
           background: var(--ab-bg);
           perspective: 1200px;
           overflow: hidden;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
+        /* The card is a SQUARE (100vmax) centred in the stage. At ~1.16× it covers
+           the screen with the cutouts off-screen; shrinking it docks a clean square. */
         .hc-card {
-          /* --vid-scale: zoom the video from its center. 1 = whole frame (with
-             letterbox bars); raise it (e.g. 1.25) to fill the card / crop the bars. */
-          --vid-scale: 1.25;
-          position: absolute;
-          inset: 0;
+          position: relative;
+          flex: none;
+          width: 100vmax;
+          height: 100vmax;
           transform-origin: center center;
           transform-style: preserve-3d;   /* front + back faces live in 3D for the flip */
           will-change: transform;
@@ -297,7 +348,9 @@ export default function About() {
           flex-direction: column;
           justify-content: flex-end;
           gap: 1rem;
-          padding: clamp(2rem, 6vw, 6rem);
+          /* clear the grid's left vertical line + border on the other sides */
+          padding: calc(clamp(14px, 1.5vw, 26px) + 2rem) calc(clamp(14px, 1.5vw, 26px) + 2rem)
+                   calc(clamp(14px, 1.5vw, 26px) + 3rem) calc(clamp(78px, 7vw, 116px) + 2rem);
           transform-origin: center center;
           color: #fff;
           pointer-events: none;
@@ -339,21 +392,29 @@ export default function About() {
           overflow: hidden;
           backface-visibility: hidden;
         }
-        .hc-card video {
+        /* Two stacked image layers (cover-fit, oversized so the cursor parallax
+           never reveals the card edges). foreground sits above background. */
+        .hc-layers { position: absolute; inset: 0; }
+        /* contain → the WHOLE 2:1 panorama is shown (not center-cropped). The card
+           is taller than 16:9, so at full-screen the letterbox bands fall off-screen
+           and the image fills the view; the small docked square shows them (dark). */
+        .hc-bg-img, .hc-fg-img {
           position: absolute;
-          inset: 0;
-          width: 100%;
-          height: 100%;
-          object-fit: contain;   /* show the WHOLE video frame — never crop it */
-          transform: scale(var(--vid-scale));
+          inset: -4%;                 /* small headroom for the cursor parallax */
+          width: 108%;
+          height: 108%;
+          object-fit: contain;
+          display: block;
           transform-origin: center center;
           will-change: transform;
           backface-visibility: hidden;
-          display: block;
         }
+        .hc-fg-img { z-index: 1; }
         .hc-card-content { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
 
-        .ab-grid { max-width: 1500px; margin: 0 auto; padding: clamp(5rem, 13vh, 12rem) clamp(1.25rem, 5vw, 6rem); display: grid; grid-template-columns: auto 1fr; gap: clamp(2rem, 6vw, 6rem); align-items: start; }
+        /* Padded to sit INSIDE the grid frame: left clears the vertical line
+           (matches GridFrame's --gf-col), right clears the border (--gf-inset). */
+        .ab-grid { margin: 0; padding: clamp(5rem, 13vh, 12rem) calc(clamp(14px, 1.5vw, 26px) + 2rem) clamp(5rem, 13vh, 12rem) calc(clamp(78px, 7vw, 116px) + 2rem); display: grid; grid-template-columns: auto 1fr; gap: clamp(2rem, 6vw, 6rem); align-items: start; }
         .ab-rail { display: flex; gap: 1.2rem; align-items: flex-start; position: sticky; top: 14vh; }
         .ab-rail-line { width: 1px; height: clamp(8rem, 20vh, 16rem); background: linear-gradient(var(--accent), transparent); transform-origin: top; }
         .ab-rail-jp { font-family: var(--font-jp), serif; writing-mode: vertical-rl; font-size: clamp(2rem, 4vw, 3.4rem); letter-spacing: 0.15em; color: transparent; -webkit-text-stroke: 1px rgba(230,0,18,0.55); }
@@ -380,18 +441,16 @@ export default function About() {
 
       <div className="ab-collapse">
         <div className="hc-card">
-          {/* FRONT — the video card that shrinks/docks */}
+          {/* FRONT — the parallax image card that shrinks/docks */}
           <div className="hc-front">
             <div className="hc-shadow" />
             <div className="hc-clip">
-              <video
-                src="/videos/bg_hero.mp4"
-                autoPlay
-                muted
-                loop
-                playsInline
-                preload="auto"
-              />
+              <div className="hc-layers">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img className="hc-bg-img" src="/card/beforeFlip/background.svg" alt="" />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img className="hc-fg-img" src="/card/beforeFlip/foreground.svg" alt="" />
+              </div>
             </div>
             <div className="hc-card-content" />
           </div>

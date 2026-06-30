@@ -4,6 +4,8 @@ import PositionTracker from "@/src/components/trackers/PositionTracker";
 import SplashScreen from "@/src/sections/Splash/SplashScreen01";
 import FireAssistant from "@/src/components/FireAssistant";
 import MobileGate from "@/src/components/MobileGate";
+import SectionTransition from "@/src/components/SectionTransition";
+import GridFrame from "@/src/components/GridFrame";
 
 export default function Home() {
   return (
@@ -17,6 +19,10 @@ export default function Home() {
         <PositionTracker />
         {/* Fixed bottom-right Lottie assistant button + chat bubble (post-splash). */}
         <FireAssistant />
+        {/* Full-screen WebGL dissolve transition fired by nav clicks. */}
+        <SectionTransition />
+        {/* Technical grid-line frame (fades in once the card docks). */}
+        <GridFrame />
       </main>
     </MobileGate>
   );
