@@ -20,14 +20,14 @@ export default function FireAssistant() {
   const [idx, setIdx] = useState(0);           // which message
 
   useEffect(() => {
+    // Reveal ONLY once the splash has cleared — never before (no timed fallback,
+    // so a slow/long splash can't surface the assistant early).
     const reveal = () => setShown(true);
     const w = window as Window & { __heroSplashDone?: boolean };
     if (w.__heroSplashDone) reveal();
     else window.addEventListener("splash:complete", reveal, { once: true });
-    const fallback = window.setTimeout(reveal, 10000); // safety net
     return () => {
       window.removeEventListener("splash:complete", reveal);
-      window.clearTimeout(fallback);
     };
   }, []);
 

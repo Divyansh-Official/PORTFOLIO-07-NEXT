@@ -63,6 +63,11 @@ body {
 ::-webkit-scrollbar-thumb { background: var(--accent-dim); border-radius: 8px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 
+/* Locked ONLY while the splash screen is mounted → hides the page scrollbar and
+   pins the page at the top behind the splash. Removed the instant the splash
+   finishes (see SplashScreen01), so the main page keeps its normal scrollbar. */
+html.splash-lock { overflow: hidden; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

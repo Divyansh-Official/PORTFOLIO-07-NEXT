@@ -13,6 +13,26 @@ const BACK = {
   title: "I build the hard middle of the system — and the apps that ride on it.",
 };
 
+// Parallax art for the 4 corner satellite cards, in order: top-left, top-right,
+// bottom-left, bottom-right. Shared for now — swap each { bg, fg } pair to give
+// every corner its own distinct image later.
+const CORNER_ART = [
+  { bg: "/card/beforeFlip/background.svg", fg: "/card/beforeFlip/foreground.svg" }, // TL
+  { bg: "/card/beforeFlip/background.svg", fg: "/card/beforeFlip/foreground.svg" }, // TR
+  { bg: "/card/beforeFlip/background.svg", fg: "/card/beforeFlip/foreground.svg" }, // BL
+  { bg: "/card/beforeFlip/background.svg", fg: "/card/beforeFlip/foreground.svg" }, // BR
+];
+
+// Base 3D tilt (deg) per corner card — same TL, TR, BL, BR order. Each is angled
+// TOWARD the centre (rotateX / rotateY signs mirror per corner) so the four cards
+// "cup" the main card in z-space. The cursor adds a small live lean on top.
+const CORNER_TILT = [
+  { x: -12, y: -16 }, // TL — leans down-right, toward centre
+  { x: -12, y:  16 }, // TR — leans down-left
+  { x:  12, y: -16 }, // BL — leans up-right
+  { x:  12, y:  16 }, // BR — leans up-left
+];
+
 export default function About() {
   const sectionRef = useRef<HTMLElement>(null);
 
@@ -20,6 +40,7 @@ export default function About() {
     const ctx = gsap.context(() => {
       const card = sectionRef.current?.querySelector(".hc-card") as HTMLElement | null;
       if (!card) return;
+      const stage = sectionRef.current?.querySelector(".ab-collapse") as HTMLElement | null;
       const backContent = sectionRef.current?.querySelector(".hc-back-content") as HTMLElement | null;
 
       let W = card.offsetWidth;
@@ -109,8 +130,42 @@ export default function About() {
       };
       computeCoverBy();
 
+      // ── 4 corner satellite cards — geometry ──────────────────────────────────
+      // Each is the SAME 100vmax square as the main card, scaled to the docked size
+      // (so it carries the identical clip cutouts). They start stacked at the screen
+      // CENTRE, hidden behind the main card, and travel out to the four corners of
+      // the grid frame as the main card shrinks — in perfect lockstep. All positions
+      // are viewport px, recomputed on refresh/resize so they always hug the grid.
+      let cCenterX = 0, cCenterY = 0;
+      const cornerTargets = [
+        { x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 },
+      ];
+      // How far to pull the corner cards IN from the grid corners toward the main
+      // card (0 = hug the grid corners · 1 = stacked at centre). Higher → tighter
+      // cluster hugging the central card. They stay inside the grid at any value,
+      // since each target is a point BETWEEN an in-grid corner and the centre.
+      const CORNER_PULL = 0.5;
+      const computeCorners = () => {
+        const vw = window.innerWidth, vh = window.innerHeight;
+        const half = (DOCKED_SCALE * Math.max(vw, vh)) / 2;   // ½ of the docked square
+        const inset = Math.min(26, Math.max(14, vw * 0.015)); // matches GridFrame --gf-inset
+        const gap = Math.min(22, Math.max(12, vw * 0.014));   // breathing room inside the grid
+        const m = inset + gap + half;                         // in-grid corner offset from each edge
+        cCenterX = vw / 2; cCenterY = vh / 2;
+        const lerp = (corner: number, center: number) => corner + (center - corner) * CORNER_PULL;
+        const lx = lerp(m, cCenterX), rx = lerp(vw - m, cCenterX);   // pulled-in left / right x
+        const ty = lerp(m, cCenterY), by = lerp(vh - m, cCenterY);   // pulled-in top / bottom y
+        cornerTargets[0] = { x: lx, y: ty };   // top-left
+        cornerTargets[1] = { x: rx, y: ty };   // top-right
+        cornerTargets[2] = { x: lx, y: by };   // bottom-left
+        cornerTargets[3] = { x: rx, y: by };   // bottom-right
+      };
+      computeCorners();
+
       // Apply the fixed notched clip once, and re-measure/re-apply on refresh.
-      const setClip = () => { card.style.setProperty("--card-clip", `path("${buildPath(1)}")`); };
+      // Set it on the STAGE so BOTH the main card and the 4 corner satellite cards
+      // (siblings) inherit the exact same clip path → identical cutouts everywhere.
+      const setClip = () => { (stage ?? card).style.setProperty("--card-clip", `path("${buildPath(1)}")`); };
       setClip();
       gsap.set(card, { scale: START_SCALE, force3D: true });
       if (backContent) gsap.set(backContent, { opacity: 0 });
@@ -131,6 +186,14 @@ export default function About() {
         const imgScale = 1 + it * (IMG_COVER - 1);
         if (fg) gsap.set(fg, { scale: imgScale });
         if (bg) gsap.set(bg, { scale: imgScale });
+        // Corner cards glide toward their scroll-driven targets (lerp) so the
+        // emergence reads silky — matching the main card's smoothed motion.
+        for (let i = 0; i < cornerData.length; i++) {
+          const c = cornerData[i];
+          c.curX += (c.tX - c.curX) * SMOOTH;
+          c.curY += (c.tY - c.curY) * SMOOTH;
+          gsap.set(c.el, { x: c.curX, y: c.curY });
+        }
       };
       gsap.ticker.add(transformTick);
 
@@ -146,6 +209,41 @@ export default function About() {
       // the image layers parallaxing against it for depth.
       const cardX = gsap.quickTo(card, "x", { duration: 0.6, ease: "power3.out" });
       const cardY = gsap.quickTo(card, "y", { duration: 0.6, ease: "power3.out" });
+
+      // ── Corner cards — parallax + tilt rigs ──────────────────────────────────
+      // Each corner card gets its own foreground/background parallax (foreground
+      // moves more → depth) plus a gentle 3D tilt toward the cursor. Their images
+      // sit at COVER (like the docked main card) so no letterbox bands show.
+      const cornerEls = Array.from(
+        sectionRef.current?.querySelectorAll(".hc-corner") ?? [],
+      ) as HTMLElement[];
+      const cornerData = cornerEls.map((el, i) => {
+        const cfg = el.querySelector(".hc-fg-img") as HTMLElement | null;
+        const cbg = el.querySelector(".hc-bg-img") as HTMLElement | null;
+        if (cfg) gsap.set(cfg, { scale: IMG_COVER });
+        if (cbg) gsap.set(cbg, { scale: IMG_COVER });
+        const tilt = CORNER_TILT[i] ?? { x: 0, y: 0 };
+        return {
+          el,
+          fgX: cfg ? gsap.quickTo(cfg, "x", { duration: 0.7, ease: "power3.out" }) : null,
+          fgY: cfg ? gsap.quickTo(cfg, "y", { duration: 0.7, ease: "power3.out" }) : null,
+          bgX: cbg ? gsap.quickTo(cbg, "x", { duration: 0.95, ease: "power3.out" }) : null,
+          bgY: cbg ? gsap.quickTo(cbg, "y", { duration: 0.95, ease: "power3.out" }) : null,
+          rotX: gsap.quickTo(el, "rotationX", { duration: 0.6, ease: "power3.out" }),
+          rotY: gsap.quickTo(el, "rotationY", { duration: 0.6, ease: "power3.out" }),
+          baseX: tilt.x, baseY: tilt.y,   // resting z-axis tilt (cursor leans around it)
+          curX: cCenterX, curY: cCenterY, tX: cCenterX, tY: cCenterY,
+        };
+      });
+      // Start every corner card centred (behind the main card) at the docked scale
+      // and its resting 3D tilt, fully transparent — onUpdate fades + slides them out.
+      cornerData.forEach((c) => {
+        gsap.set(c.el, {
+          xPercent: -50, yPercent: -50, x: cCenterX, y: cCenterY,
+          scale: DOCKED_SCALE, rotationX: c.baseX, rotationY: c.baseY, opacity: 0,
+        });
+      });
+
       // Listen on the WINDOW so the parallax responds to the cursor ALL the time —
       // at every scale (shrinking, docked, full-screen), not just while docked.
       const onMove = (ev: MouseEvent) => {
@@ -155,6 +253,17 @@ export default function About() {
         fgX?.(-dx * 50); fgY?.(-dy * 18);     // foreground (panorama → mostly horizontal)
         bgX?.(-dx * 20); bgY?.(-dy * 7);      // background (subtler depth)
         if (inDock) { cardX(dx * 40); cardY(dy * 40); }   // card magnet — toward cursor, docked only
+        // Each corner card parallaxes + tilts toward the cursor independently,
+        // measured against its OWN centre so all five cards feel alive.
+        for (let i = 0; i < cornerData.length; i++) {
+          const c = cornerData[i];
+          const r = c.el.getBoundingClientRect();
+          const cdx = gsap.utils.clamp(-0.5, 0.5, (ev.clientX - (r.left + r.width / 2)) / (r.width || 1));
+          const cdy = gsap.utils.clamp(-0.5, 0.5, (ev.clientY - (r.top + r.height / 2)) / (r.height || 1));
+          c.fgX?.(-cdx * 50); c.fgY?.(-cdy * 18);
+          c.bgX?.(-cdx * 20); c.bgY?.(-cdy * 7);
+          c.rotY?.(c.baseY + cdx * 6); c.rotX?.(c.baseX - cdy * 6);   // lean around resting tilt
+        }
       };
       window.addEventListener("mousemove", onMove);
 
@@ -166,7 +275,7 @@ export default function About() {
         pinSpacing: true,
         anticipatePin: 1,
         invalidateOnRefresh: true,
-        onRefresh: () => { W = card.offsetWidth; H = card.offsetHeight; setClip(); computeCoverBy(); },
+        onRefresh: () => { W = card.offsetWidth; H = card.offsetHeight; setClip(); computeCoverBy(); computeCorners(); },
         onUpdate: (self) => {
           const p = self.progress;
           const ease = gsap.parseEase("power2.inOut");
@@ -214,6 +323,22 @@ export default function About() {
           const nowDock = p >= MAGNET_FROM && p < P_FLIP_A;
           if (inDock && !nowDock) { cardX(0); cardY(0); }
           inDock = nowDock;
+
+          // ── Corner satellite cards ──────────────────────────────────────────
+          // Travel centre → grid corners on the SAME shrink easing (so they land
+          // exactly as the main card docks), fade in as they clear the main card,
+          // then fade out again as the main card scales up to fill the screen.
+          const sp = gsap.utils.clamp(0, 1, p / P_SHRINK);
+          const travel = ease(sp);
+          const up = p > P_UP ? gsap.utils.clamp(0, 1, (p - P_UP) / (1 - P_UP)) : 0;
+          const cOpacity = gsap.utils.clamp(0, 1, sp / 0.6) * (1 - up);
+          for (let i = 0; i < cornerData.length; i++) {
+            const c = cornerData[i];
+            const tgt = cornerTargets[i];
+            c.tX = cCenterX + (tgt.x - cCenterX) * travel;
+            c.tY = cCenterY + (tgt.y - cCenterY) * travel;
+            gsap.set(c.el, { opacity: cOpacity });
+          }
         },
       });
 
@@ -282,12 +407,31 @@ export default function About() {
            the screen with the cutouts off-screen; shrinking it docks a clean square. */
         .hc-card {
           position: relative;
+          z-index: 1;                     /* sits ABOVE the corner satellite cards */
           flex: none;
           width: 100vmax;
           height: 100vmax;
           transform-origin: center center;
           transform-style: preserve-3d;   /* front + back faces live in 3D for the flip */
           will-change: transform;
+        }
+        /* ── 4 corner satellite cards ─────────────────────────────────────────
+           Absolutely overlaid (so the flex-centred main card stays centred), each
+           a full 100vmax square scaled to the docked size in JS — so it inherits
+           the EXACT same --card-clip cutouts. They start behind the main card and
+           fan out to the grid corners as it shrinks. */
+        .hc-corners { position: absolute; inset: 0; z-index: 0; pointer-events: none; perspective: 1200px; }
+        .hc-corner {
+          position: absolute;
+          top: 0; left: 0;
+          width: 100vmax;
+          height: 100vmax;
+          transform-origin: center center;
+          transform-style: preserve-3d;
+          -webkit-backface-visibility: hidden;
+          backface-visibility: hidden;
+          will-change: transform, opacity;
+          opacity: 0;
         }
         /* Two faces of the card: front = the video card, back = the new bg3 section.
            backface-visibility hides whichever face is turned away during the flip. */
@@ -415,6 +559,25 @@ export default function About() {
       `}</style>
 
       <div className="ab-collapse">
+        {/* 4 corner satellite cards — emerge from behind the main card during the
+            shrink and dock into the grid corners. Same clip cutouts + parallax.
+            Images are shared for now (swap each src later for distinct art). */}
+        <div className="hc-corners" aria-hidden="true">
+          {CORNER_ART.map((art, i) => (
+            <div className="hc-corner" key={i}>
+              <div className="hc-shadow" />
+              <div className="hc-clip">
+                <div className="hc-layers">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img className="hc-bg-img" src={art.bg} alt="" />
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img className="hc-fg-img" src={art.fg} alt="" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
         <div className="hc-card">
           {/* FRONT — the parallax image card that shrinks/docks */}
           <div className="hc-front">

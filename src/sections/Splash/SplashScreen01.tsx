@@ -32,6 +32,12 @@ export default function SplashScreen01() {
   // All GSAP queries are safe here because the DOM is fully painted.
   useEffect(() => {
 
+    // Lock the page ONLY while the splash is up: hides the real scrollbar and
+    // blocks scrolling behind the splash (also keeps the page pinned at the top so
+    // ENGAGE always reveals the hero from the top). Released in the exit sequence
+    // AND on unmount, so the main page always keeps its normal scrollbar.
+    document.documentElement.classList.add("splash-lock");
+
     // ── Gate flag ────────────────────────────────────────────────────────────
     // Prevents the exit animation from firing before the intro finishes.
     let preloaderComplete = false;
@@ -234,6 +240,12 @@ export default function SplashScreen01() {
             onComplete: () => {
               // Drop it from layout so it no longer intercepts pointer events.
               gsap.set(".preloader", { display: "none" });
+              // Unlock scrolling now the splash is fully gone, and pin the hero at
+              // the very top so ENGAGE always reveals it from the start.
+              document.documentElement.classList.remove("splash-lock");
+              window.scrollTo(0, 0);
+              const lenis = (window as Window & { __lenis?: { scrollTo: (t: number, o?: { immediate?: boolean }) => void } }).__lenis;
+              lenis?.scrollTo(0, { immediate: true });
               // Tell the hero the splash is gone → it plays its entrance animation.
               (window as Window & { __heroSplashDone?: boolean }).__heroSplashDone = true;
               window.dispatchEvent(new Event("splash:complete"));
@@ -264,6 +276,8 @@ export default function SplashScreen01() {
     return () => {
       preloaderBtn.removeEventListener("click", handleClick);
       gsap.killTweensOf("*");
+      // Never leave the page locked if the splash unmounts before ENGAGE.
+      document.documentElement.classList.remove("splash-lock");
     };
 
   }, []); // empty dep array → runs once on mount, mirrors DOMContentLoaded
