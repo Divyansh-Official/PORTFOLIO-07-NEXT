@@ -33,6 +33,47 @@ const CORNER_TILT = [
   { x:  12, y:  16 }, // BR — leans up-left
 ];
 
+// Explicit clip polygon for the corner cards (fractions of the card box), oriented
+// for the BOTTOM-RIGHT card: diagonal bevels on the top-right + bottom-right corners
+// and a folder notch on the upper-left so it "faces" the main card. Mirrored per
+// corner (below) so all four notches point toward the centre. Corners get rounded.
+const CORNER_POLY: [number, number][] = [
+  [0.889, 0.000],
+  [1.000, 0.143],
+  [1.000, 0.901],
+  [0.834, 1.000],
+  [0.000, 1.000],
+  [0.000, 0.631],
+  [0.085, 0.568],
+  [0.084, 0.000],
+];
+// Per-corner mirror flags [flipX, flipY] in TL, TR, BL, BR order.
+// BR = original · BL = horizontal mirror · TR = vertical mirror · TL = both.
+const CORNER_MIRROR: [boolean, boolean][] = [
+  [true, true],    // TL
+  [false, true],   // TR
+  [true, false],   // BL
+  [false, false],  // BR
+];
+
+// Round an ordered polygon (points already in px) into an SVG path string using
+// quadratic curves — the same corner-rounding technique as the main card's clip.
+function roundedPath(pts: [number, number][], radius: number): string {
+  const n = pts.length;
+  let d = "";
+  for (let i = 0; i < n; i++) {
+    const prev = pts[(i - 1 + n) % n], cur = pts[i], next = pts[(i + 1) % n];
+    const lp = Math.hypot(cur[0] - prev[0], cur[1] - prev[1]) || 1;
+    const ln = Math.hypot(next[0] - cur[0], next[1] - cur[1]) || 1;
+    const r = Math.max(0, Math.min(radius, lp / 2, ln / 2));
+    const ax = cur[0] + ((prev[0] - cur[0]) / lp) * r, ay = cur[1] + ((prev[1] - cur[1]) / lp) * r;
+    const bx = cur[0] + ((next[0] - cur[0]) / ln) * r, by = cur[1] + ((next[1] - cur[1]) / ln) * r;
+    d += i === 0 ? `M ${ax.toFixed(1)} ${ay.toFixed(1)} ` : `L ${ax.toFixed(1)} ${ay.toFixed(1)} `;
+    d += `Q ${cur[0].toFixed(1)} ${cur[1].toFixed(1)} ${bx.toFixed(1)} ${by.toFixed(1)} `;
+  }
+  return d + "Z";
+}
+
 export default function About() {
   const sectionRef = useRef<HTMLElement>(null);
 
@@ -141,10 +182,11 @@ export default function About() {
         { x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 },
       ];
       // How far to pull the corner cards IN from the grid corners toward the main
-      // card (0 = hug the grid corners · 1 = stacked at centre). Higher → tighter
-      // cluster hugging the central card. They stay inside the grid at any value,
-      // since each target is a point BETWEEN an in-grid corner and the centre.
-      const CORNER_PULL = 0.5;
+      // card (0 = hug the grid corners · 1 = stacked at centre). Modest pull → they
+      // sit out near the corners with clear breathing room around the main card.
+      // They stay inside the grid at any value (each target lies between an in-grid
+      // corner and the centre).
+      const CORNER_PULL = 0.26;
       const computeCorners = () => {
         const vw = window.innerWidth, vh = window.innerHeight;
         const half = (DOCKED_SCALE * Math.max(vw, vh)) / 2;   // ½ of the docked square
@@ -187,12 +229,13 @@ export default function About() {
         if (fg) gsap.set(fg, { scale: imgScale });
         if (bg) gsap.set(bg, { scale: imgScale });
         // Corner cards glide toward their scroll-driven targets (lerp) so the
-        // emergence reads silky — matching the main card's smoothed motion.
+        // emergence + collapse read silky — matching the main card's smoothed motion.
         for (let i = 0; i < cornerData.length; i++) {
           const c = cornerData[i];
           c.curX += (c.tX - c.curX) * SMOOTH;
           c.curY += (c.tY - c.curY) * SMOOTH;
-          gsap.set(c.el, { x: c.curX, y: c.curY });
+          c.curS += (c.tS - c.curS) * SMOOTH;
+          gsap.set(c.el, { x: c.curX, y: c.curY, scale: c.curS });
         }
       };
       gsap.ticker.add(transformTick);
@@ -233,14 +276,31 @@ export default function About() {
           rotY: gsap.quickTo(el, "rotationY", { duration: 0.6, ease: "power3.out" }),
           baseX: tilt.x, baseY: tilt.y,   // resting z-axis tilt (cursor leans around it)
           curX: cCenterX, curY: cCenterY, tX: cCenterX, tY: cCenterY,
+          curS: 0, tS: 0,                 // scale grows 0 → docked on emerge, back to 0 on collapse
         };
       });
-      // Start every corner card centred (behind the main card) at the docked scale
-      // and its resting 3D tilt, fully transparent — onUpdate fades + slides them out.
+      // Give each corner card its OWN rounded clip (the custom polygon, mirrored per
+      // corner), overriding the inherited main-card clip on that subtree.
+      const buildCornerClip = (mx: boolean, my: boolean) => {
+        const pts = CORNER_POLY.map(([x, y]) => [
+          (mx ? 1 - x : x) * W,
+          (my ? 1 - y : y) * H,
+        ] as [number, number]);
+        return `path("${roundedPath(pts, 40)}")`;
+      };
+      const applyCornerClips = () => {
+        cornerData.forEach((c, i) => {
+          const [mx, my] = CORNER_MIRROR[i] ?? [false, false];
+          c.el.style.setProperty("--card-clip", buildCornerClip(mx, my));
+        });
+      };
+      applyCornerClips();
+      // Start every corner card centred (behind the main card) at scale 0 and its
+      // resting 3D tilt — onUpdate scales + slides them out as the main card shrinks.
       cornerData.forEach((c) => {
         gsap.set(c.el, {
           xPercent: -50, yPercent: -50, x: cCenterX, y: cCenterY,
-          scale: DOCKED_SCALE, rotationX: c.baseX, rotationY: c.baseY, opacity: 0,
+          scale: 0, rotationX: c.baseX, rotationY: c.baseY, opacity: 0,
         });
       });
 
@@ -275,7 +335,7 @@ export default function About() {
         pinSpacing: true,
         anticipatePin: 1,
         invalidateOnRefresh: true,
-        onRefresh: () => { W = card.offsetWidth; H = card.offsetHeight; setClip(); computeCoverBy(); computeCorners(); },
+        onRefresh: () => { W = card.offsetWidth; H = card.offsetHeight; setClip(); computeCoverBy(); computeCorners(); applyCornerClips(); },
         onUpdate: (self) => {
           const p = self.progress;
           const ease = gsap.parseEase("power2.inOut");
@@ -325,18 +385,22 @@ export default function About() {
           inDock = nowDock;
 
           // ── Corner satellite cards ──────────────────────────────────────────
-          // Travel centre → grid corners on the SAME shrink easing (so they land
-          // exactly as the main card docks), fade in as they clear the main card,
-          // then fade out again as the main card scales up to fill the screen.
+          // EMERGE: scale 0 → docked while travelling centre → corner, on the SAME
+          // shrink easing (so they grow out from behind the main card exactly as it
+          // docks). COLLAPSE: scale docked → 0 as the main card flips + scales up to
+          // reveal the next content, so they implode back behind it.
           const sp = gsap.utils.clamp(0, 1, p / P_SHRINK);
-          const travel = ease(sp);
-          const up = p > P_UP ? gsap.utils.clamp(0, 1, (p - P_UP) / (1 - P_UP)) : 0;
-          const cOpacity = gsap.utils.clamp(0, 1, sp / 0.6) * (1 - up);
+          const emerge = ease(sp);                                    // 0 → 1 during the shrink
+          const col = p > P_UP ? ease(gsap.utils.clamp(0, 1, (p - P_UP) / (1 - P_UP))) : 0;
+          const env = emerge * (1 - col);                            // scale envelope: grow, hold, implode
+          const cScale = DOCKED_SCALE * env;
+          const cOpacity = gsap.utils.clamp(0, 1, env / 0.15);       // soft edge at both ends
           for (let i = 0; i < cornerData.length; i++) {
             const c = cornerData[i];
             const tgt = cornerTargets[i];
-            c.tX = cCenterX + (tgt.x - cCenterX) * travel;
-            c.tY = cCenterY + (tgt.y - cCenterY) * travel;
+            c.tX = cCenterX + (tgt.x - cCenterX) * emerge;
+            c.tY = cCenterY + (tgt.y - cCenterY) * emerge;
+            c.tS = cScale;
             gsap.set(c.el, { opacity: cOpacity });
           }
         },
