@@ -26,35 +26,12 @@ export default function About() {
       let H = card.offsetHeight;
       let inDock = false;   // true while the card is docked (card-magnet window)
 
-      const section = sectionRef.current!;
-      // Background fade: the site bg eases black → white as bg3 collapses into the
-      // card. start = where in the collapse the fade begins (0 = the moment the
-      // card starts forming). speed = how far up the scroll the target completes.
-      // smooth = fade easing per frame — lower is silkier/slower (it glides toward
-      // the target instead of snapping). This smoothing is what makes it a fade
-      // animation rather than a raw per-scroll color flip.
-      const BG_FADE = { start: 0.0, speed: 5.7, smooth: 0.06 };
-      const bgEase = gsap.parseEase("power2.inOut");
-      let bgTarget = 0;   // scroll-driven destination (0 = black, 1 = white)
-      let bgCurrent = 0;  // smoothed value actually painted
-
-      // Every frame, glide the painted background toward its scroll target so the
-      // black → white change reads as a soft fade — not a hard per-scroll switch.
-      const bgTick = () => {
-        const diff = bgTarget - bgCurrent;
-        if (Math.abs(diff) < 0.0006) return;
-        bgCurrent += diff * BG_FADE.smooth;
-        const v = Math.round(gsap.utils.clamp(0, 1, bgCurrent) * 255);
-        section.style.setProperty("--ab-bg", `rgb(${v}, ${v}, ${v})`);
-      };
-      gsap.ticker.add(bgTick);
-
       // Rounded card via clip-path: path() — quadratic-curve rounding on the outer
       // corners, the folder-tab notch at the TOP-LEFT, and a diagonal BEVEL cut at
       // the BOTTOM-RIGHT only (top + bottom-left are left untouched).
       const buildPath = (sp: number) => {
         const R = sp * 40, nr = sp * 16;
-        const nw = sp * 150, nh = sp * 72;   // top-left folder-tab notch (unchanged)
+        const nw = sp * 210, nh = sp * 105;  // top-left folder-tab notch (a bit bigger)
         const bv = sp * 130;                 // bottom-right bevel — diagonal corner cut
         const pts: [number, number][] = [
           [nw, 0], [W, 0],
@@ -118,6 +95,9 @@ export default function About() {
       // Card magnet activates here — during the late shrink, once the cutouts show
       // (not only when fully docked).
       const MAGNET_FROM = 0.12;
+      // Grid frame + vertical navbar fade in here — just after the card has shrunk
+      // a little (earlier than the docked threshold), via a smooth CSS opacity fade.
+      const GRID_FROM = 0.1;
 
       // The image must reach full COVER *before* the square is small enough to show
       // top/bottom bands — that happens at card scale = viewport-height / card-side
@@ -226,13 +206,9 @@ export default function About() {
             gsap.set(backContent, { opacity: cin });
           }
 
-          // black → white fade TARGET (bgTick eases the painted bg toward it)
-          const bgP = gsap.utils.clamp(0, 1, (p - BG_FADE.start) * BG_FADE.speed);
-          bgTarget = bgEase(bgP);
-
-          // Grid-line frame fades in once the card has shrunk to its docked size
-          // (the threshold before the flip), and stays on for the rest of the page.
-          document.documentElement.classList.toggle("grid-on", p >= P_SHRINK);
+          // Grid-line frame + vertical navbar fade in once the card has shrunk a
+          // little, and stay on for the rest of the page (smooth CSS opacity fade).
+          document.documentElement.classList.toggle("grid-on", p >= GRID_FROM);
 
           // card magnet active from the late shrink (cutouts visible) until the flip
           const nowDock = p >= MAGNET_FROM && p < P_FLIP_A;
@@ -265,7 +241,6 @@ export default function About() {
       window.addEventListener("load", refresh);
 
       return () => {
-        gsap.ticker.remove(bgTick);
         gsap.ticker.remove(transformTick);
         window.removeEventListener("load", refresh);
         window.removeEventListener("mousemove", onMove);
@@ -279,13 +254,12 @@ export default function About() {
   return (
     <section className="about" id="about" ref={sectionRef}>
       <style>{`
-        /* --ab-bg is driven from black → white by the collapse scroll (set in JS).
-           Light-theme inks below so the content stays readable once it's white. */
+        /* Black section (matches the rest of the site) with light-on-black inks. */
         .about {
           --ab-bg:   #000;
-          --ab-ink:  #16161c;
-          --ab-dim:  #6b6b73;
-          --ab-line: rgba(0, 0, 0, 0.12);
+          --ab-ink:  #f4f4f4;
+          --ab-dim:  #8a8a8a;
+          --ab-line: rgba(255, 255, 255, 0.12);
           position: relative;
           background: var(--ab-bg);
           color: var(--ab-ink);
