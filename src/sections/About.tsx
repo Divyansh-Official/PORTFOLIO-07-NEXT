@@ -47,6 +47,17 @@ const SIDE_POLY: [number, number][] = [
 
 // Side-card emergence — it EXPANDS (grows) out from behind the main card, then slides
 // to the right and settles. Tune freely.
+// ── Layer centring ── each layer's FOCAL centre inside its artwork, as a fraction of
+// the image width (measured by scanning the layers on a canvas — not eyeballed):
+//   bg  0.464 → the sun disc (bright-pixel centroid; the layer is full-bleed opaque)
+//   mid 0.417 → the levitating rock (alpha-bbox centre; 8.3% LEFT of the artwork centre)
+//   fg  0.5   → KEEP the artwork's designed composition: it's a FRAME layer (mountains
+//               on the left + right edges, open middle) — recentring its mass pushed it
+//               left and hid a wall; 0.5 keeps both walls framing the mid/bg clearly.
+// The JS computes the exact object-position per layer for the current card shape.
+// The measured focal Y values (bg 0.371 / mid 0.522) drive the fixed CSS top nudges.
+const FOCUS = { bg: 0.464, mid: 0.417, fg: 0.5 };
+
 const SIDE_START = 0.62;   // initial (visible) scale, tucked behind the main card
 const SIDE_BIG   = 1.12;   // overshoot — grows larger before settling
 const SIDE_END   = 1.00;   // final resting scale
@@ -187,6 +198,9 @@ export default function About() {
         sideEl.style.height = `${(SIDE_W_VMAX * SIDE_ASPECT).toFixed(3)}vmax`;
       }
       const computeSide = () => {
+        // Skip while expanded: the card is a fullscreen fixed box then — measuring it
+        // would corrupt sW/sH (and the docked targets) for the collapse.
+        if (sideEl?.classList.contains("side-expanded")) return;
         const vw = window.innerWidth, vh = window.innerHeight;
         sW = sideEl?.offsetWidth || 0;
         sH = sideEl?.offsetHeight || 0;
@@ -208,7 +222,9 @@ export default function About() {
         return `path("${roundedPath(pts, Math.min(sW, sH) * 0.05)}")`;
       };
       const applySideClip = () => {
-        if (sideEl && sW > 0) sideEl.style.setProperty("--card-clip", buildSideClip());
+        if (!sideEl || sW <= 0) return;
+        if (sideEl.classList.contains("side-expanded")) return;   // fullscreen = no cutouts
+        sideEl.style.setProperty("--card-clip", buildSideClip());
       };
 
       // Apply the fixed notched clip once, and re-measure/re-apply on refresh. Set
@@ -245,9 +261,9 @@ export default function About() {
           if (bg) gsap.set(bg, { scale: imgScale, force3D: true });
           lastImg = imgScale;
         }
-        // Side card glides toward its scroll-driven target (lerp) so the emerge +
-        // collapse read silky — matching the main card's smoothed motion.
-        if (side.el) {
+        // Side card glides toward its scroll-driven target (lerp). Skipped while
+        // expanded — the expand tween owns the box then.
+        if (side.el && !sideExpanded) {
           side.curX += (side.tX - side.curX) * SMOOTH;
           side.curY += (side.tY - side.curY) * SMOOTH;
           side.curS += (side.tS - side.curS) * SMOOTH;
@@ -282,6 +298,37 @@ export default function About() {
         curX: cCenterX, curY: cCenterY, tX: cCenterX, tY: cCenterY,
         curS: SIDE_START, tS: SIDE_START,   // starts visible (not zero), grows, then settles
       };
+      // midground = a LEVITATING object: slow but visible up-and-down float, forever.
+      // It rides on yPercent — a separate transform channel from the parallax quickTo's
+      // px x/y — so the float and the mouse response compose instead of fighting.
+      if (smid) {
+        gsap.fromTo(smid, { yPercent: -1.5 }, {
+          yPercent: 1.5, duration: 2.6, ease: "sine.inOut", yoyo: true, repeat: -1,
+        });
+      }
+      // Centre each layer's FOCAL POINT (sun / rock / canyon mass — not the artwork
+      // midpoint) in the card. object-fit:cover fits the wide panoramas by HEIGHT, so
+      // the horizontal crop window depends on the box shape — compute the
+      // object-position that puts the layer's focus at the box centre, per state.
+      // (boxW/boxH = the img box = 116% of the card, because of the -8% inset.)
+      const layerObjPos = (el: HTMLImageElement | null, fx: number, boxW: number, boxH: number) => {
+        const nw = el?.naturalWidth || 7349, nh = el?.naturalHeight || 2450;
+        const scaledW = nw * (boxH / nh);              // cover → height-fit panorama
+        if (scaledW <= boxW) return "50% 50%";         // no horizontal overflow to place
+        return `${(((boxW / 2 - fx * scaledW) / (boxW - scaledW)) * 100).toFixed(2)}% 50%`;
+      };
+      const SIDE_LAYERS: [HTMLImageElement | null, number][] = [
+        [sbg as HTMLImageElement | null, FOCUS.bg],
+        [smid as HTMLImageElement | null, FOCUS.mid],
+        [sfg as HTMLImageElement | null, FOCUS.fg],
+      ];
+      const applyLayerCenters = () => {
+        if (sW <= 0) return;
+        if (sideEl?.classList.contains("side-expanded")) return;   // expand tween owns it
+        for (const [el, fx] of SIDE_LAYERS)
+          if (el) el.style.objectPosition = layerObjPos(el, fx, sW * 1.16, sH * 1.16);
+      };
+      applyLayerCenters();
       applySideClip();
       // Start the side card centred (behind the main card) at its initial visible
       // scale — onUpdate grows it, then slides it out to the right.
@@ -291,6 +338,106 @@ export default function About() {
           scale: SIDE_START, opacity: 0, force3D: true,
         });
       }
+
+      // ── Click to EXPAND: the side card grows to cover the whole screen exactly
+      // (clip cutouts dropped → clean full rectangle), scroll locked. Click again to
+      // shrink back: it RESIZES to the docked size and REPOSITIONS to the docked spot
+      // simultaneously — like the main card's shrink.
+      //
+      // Mechanics — built for 60fps: the card is PORTALED to <body> (the stage's
+      // `perspective` makes it the containing block for even position:fixed
+      // descendants) and LAID OUT at the full viewport for the whole ride. The
+      // animation is PURE TRANSFORMS (compositor-only — no width/height/
+      // object-position writes per frame, which forced a re-layout and a full SVG
+      // re-rasterisation of all three panoramas every frame = the jank):
+      //   card:   translate+scale from the docked rect → identity (fullscreen)
+      //   layers: counter-scale scaleX = scaleY/scaleX of the card, so the NET image
+      //           zoom stays uniform every frame — zero distortion, exact cover.
+      // Because every layer's focal point is centred in BOTH geometries, the docked
+      // appearance and the transformed fullscreen layout coincide at the endpoints —
+      // the layout/crop swap at the ends is invisible. Scroll is frozen while open,
+      // so the docked rect stays valid for the shrink.
+      let sideExpanded = false, sideBusy = false;
+      let dockRect: DOMRect | null = null;
+      const sideParent = sideEl?.parentElement ?? null;
+      const sideNext = sideEl?.nextElementSibling ?? null;
+      const layersEl = sideEl?.querySelector(".hs-layers") as HTMLElement | null;
+      const dockW = sideEl?.style.width ?? "";        // original docked size (e.g. "22vmax")
+      const dockH = sideEl?.style.height ?? "";
+      const lenis = (window as Window & { __lenis?: { stop: () => void; start: () => void } }).__lenis;
+      const EXPAND_T = 0.9, EXPAND_EASE = "power3.inOut";
+      const toggleSide = () => {
+        if (!sideEl || sideBusy) return;
+        sideBusy = true;
+        if (!sideExpanded) {
+          sideExpanded = true;
+          lenis?.stop();
+          dockRect = sideEl.getBoundingClientRect();  // frozen docked geometry (viewport coords)
+          document.body.appendChild(sideEl);          // escape the stage's containing block
+          sideEl.classList.add("side-expanded");      // lays out at 100vw × 100vh
+          // The docked size + clip are INLINE styles — clear/override them (inline
+          // beats any class rule) so the class's fullscreen layout applies.
+          sideEl.style.width = "";
+          sideEl.style.height = "";
+          sideEl.style.setProperty("--card-clip", "none");
+          // Aim the crops at their fullscreen focal positions ONCE, before the flight.
+          for (const [el, fx] of SIDE_LAYERS)
+            if (el) el.style.objectPosition = layerObjPos(el, fx, window.innerWidth * 1.16, window.innerHeight * 1.16);
+          const sx0 = dockRect.width / window.innerWidth;
+          const sy0 = dockRect.height / window.innerHeight;
+          const x0 = dockRect.left, y0 = dockRect.top;
+          // xPercent/yPercent zeroed: GSAP caches the ticker's -50% per element.
+          gsap.set(sideEl, {
+            xPercent: 0, yPercent: 0, transformOrigin: "0 0",
+            x: x0, y: y0, scaleX: sx0, scaleY: sy0, opacity: 1, force3D: true,
+          });
+          if (layersEl) gsap.set(layersEl, {
+            transformOrigin: "50% 50%", scaleX: sy0 / sx0, scaleY: 1, force3D: true,
+          });
+          const flight = { p: 0 };
+          gsap.to(flight, {
+            p: 1, duration: EXPAND_T, ease: EXPAND_EASE,
+            onUpdate: () => {
+              const sx = sx0 + (1 - sx0) * flight.p, sy = sy0 + (1 - sy0) * flight.p;
+              gsap.set(sideEl, { x: x0 * (1 - flight.p), y: y0 * (1 - flight.p), scaleX: sx, scaleY: sy });
+              if (layersEl) gsap.set(layersEl, { scaleX: sy / sx });   // exact uniform zoom
+            },
+            onComplete: () => {
+              gsap.set(sideEl, { x: 0, y: 0, scaleX: 1, scaleY: 1 });
+              if (layersEl) gsap.set(layersEl, { scaleX: 1 });
+              sideBusy = false;
+            },
+          });
+        } else {
+          const r = dockRect ?? sideEl.getBoundingClientRect();
+          const sx1 = r.width / window.innerWidth;
+          const sy1 = r.height / window.innerHeight;
+          const flight = { p: 0 };
+          gsap.to(flight, {
+            p: 1, duration: EXPAND_T, ease: EXPAND_EASE,
+            onUpdate: () => {
+              const sx = 1 + (sx1 - 1) * flight.p, sy = 1 + (sy1 - 1) * flight.p;
+              gsap.set(sideEl, { x: r.left * flight.p, y: r.top * flight.p, scaleX: sx, scaleY: sy });
+              if (layersEl) gsap.set(layersEl, { scaleX: sy / sx });   // exact uniform zoom
+            },
+            onComplete: () => {
+              sideEl.classList.remove("side-expanded");
+              if (sideParent) sideParent.insertBefore(sideEl, sideNext);   // back to its exact spot
+              if (layersEl) gsap.set(layersEl, { clearProps: "transform,transformOrigin" });
+              sideEl.style.width = dockW; sideEl.style.height = dockH;      // restore docked size
+              applySideClip();                                              // restore the notched clip
+              applyLayerCenters();                                          // restore docked crops
+              gsap.set(sideEl, {                                            // restore ticker transform
+                xPercent: -50, yPercent: -50, x: side.curX, y: side.curY,
+                scale: side.curS, opacity: 1, force3D: true,
+              });
+              lenis?.start();
+              sideExpanded = false; sideBusy = false;
+            },
+          });
+        }
+      };
+      sideEl?.addEventListener("click", toggleSide);
 
       // Cursor parallax — driven ENTIRELY from arithmetic (no getBoundingClientRect),
       // so a mousemove never forces a synchronous layout while the ticker is writing
@@ -325,7 +472,7 @@ export default function About() {
         pinSpacing: true,
         anticipatePin: 1,
         invalidateOnRefresh: true,
-        onRefresh: () => { W = card.offsetWidth; H = card.offsetHeight; setClip(); computeCoverBy(); computeSide(); applySideClip(); },
+        onRefresh: () => { W = card.offsetWidth; H = card.offsetHeight; setClip(); computeCoverBy(); computeSide(); applySideClip(); applyLayerCenters(); },
         onUpdate: (self) => {
           const p = self.progress;
           const ease = gsap.parseEase("power2.inOut");
@@ -394,7 +541,11 @@ export default function About() {
           side.tS = sScale * (1 - col);                              // implode on collapse
           side.tX = cCenterX + (sideTX - cCenterX) * posT;
           side.tY = cCenterY + (sideTY - cCenterY) * posT;
-          if (side.el) gsap.set(side.el, { opacity: gsap.utils.clamp(0, 1, emerge / 0.08) * (1 - col) });
+          if (side.el && !sideExpanded) {
+            gsap.set(side.el, { opacity: gsap.utils.clamp(0, 1, emerge / 0.08) * (1 - col) });
+            // Clickable only once docked & settled (never an invisible hit-target).
+            side.el.style.pointerEvents = emerge > 0.85 && col < 0.4 ? "auto" : "none";
+          }
         },
       });
 
@@ -425,6 +576,12 @@ export default function About() {
         gsap.ticker.remove(transformTick);
         window.removeEventListener("load", refresh);
         window.removeEventListener("mousemove", onMove);
+        sideEl?.removeEventListener("click", toggleSide);
+        // If it unmounts while expanded (e.g. HMR), put the card back where React
+        // expects it, so React's removeChild doesn't throw.
+        if (sideEl && sideEl.parentElement === document.body && sideParent) {
+          sideParent.insertBefore(sideEl, sideNext);
+        }
         document.documentElement.classList.remove("grid-on");
       };
     }, sectionRef);
@@ -482,9 +639,28 @@ export default function About() {
           transform-origin: center center;
           will-change: transform, opacity;
           contain: layout paint;     /* isolate → the ticker's writes don't reflow siblings */
-          pointer-events: none;
+          pointer-events: none;      /* toggled to auto in JS once docked (clickable) */
+          cursor: pointer;
           opacity: 0;
         }
+        /* Clicked → covers the whole viewport exactly, cutouts dropped. Portaled to
+           <body> and LAID OUT at the full viewport for the whole ride; the animation
+           is pure GPU transforms (card scales up from the docked rect, the layers
+           counter-scale so the images never distort). No width/height/object-position
+           changes per frame → zero re-layout and zero SVG re-rasterisation → smooth. */
+        .hc-side.side-expanded {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100vw;
+          height: 100vh;
+          z-index: 60;
+          --card-clip: none;          /* drop the folder-tab cutouts → full rectangle */
+          contain: none;
+          pointer-events: auto;
+          opacity: 1;
+        }
+        .hc-side.side-expanded .hc-clip { overflow: visible; }
         /* Two faces of the card: front = the video card, back = the new bg3 section.
            backface-visibility hides whichever face is turned away during the flip. */
         .hc-front, .hc-back {
@@ -574,6 +750,8 @@ export default function About() {
           inset: -4%;                 /* small headroom for the cursor parallax */
           width: 108%;
           height: 108%;
+          max-width: none;            /* don't let the global img reset clamp these */
+          max-height: none;
           object-fit: contain;
           display: block;
           transform-origin: center center;
@@ -593,14 +771,27 @@ export default function About() {
           inset: -8%;
           width: 116%;
           height: 116%;
+          max-width: none;    /* the global img{max-width:100%} reset was clamping the
+                                 116% width → the card's right edge showed a bare strip */
+          max-height: none;
           object-fit: cover;
           display: block;
           transform-origin: center center;
-          will-change: transform;
-          backface-visibility: hidden;
+          /* NOT promoted to its own GPU layer (no will-change/backface): a composited
+             child under a clip-path leaves a 1px seam at the cutout edge. Rendering it
+             inside the clip's layer makes the tab edge clean. */
         }
-        .hs-bg  { z-index: 1; }
-        .hs-mid { z-index: 2; }
+        /* Vertical focal nudges — cover fits the panoramas by HEIGHT (no vertical
+           overflow), so vertical centring is a fixed top shift instead of
+           object-position: top% = -(8 + (focusY − 0.5) × 116), clamped to
+           [-14.5%, -1.5%] so the 116%-tall layer always covers the card with ≥1.5%
+           parallax headroom on both edges.
+             bg  (sun 0.371, wants +6.96%) → clamped to -1.5% (art lacks headroom to
+                 fully centre the sun; this is the safe maximum downshift)
+             mid (rock 0.522)              → -10.55% (exact centre)
+             fg  — no nudge: frame layer, keeps its designed composition */
+        .hs-bg  { z-index: 1; top: -1.5%; }
+        .hs-mid { z-index: 2; top: -10.55%; }
         .hs-fg  { z-index: 3; }
 
         /* Padded to sit INSIDE the grid frame: left clears the vertical line
