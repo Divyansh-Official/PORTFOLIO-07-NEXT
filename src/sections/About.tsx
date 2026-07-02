@@ -15,7 +15,12 @@ const BACK = {
 
 // Parallax art for the single "side" card that emerges from behind the main card.
 // Shared with the hero card's art for now — swap these for its own images later.
-const SIDE_ART = { bg: "/card/beforeFlip/background.svg", fg: "/card/beforeFlip/foreground.svg" };
+// Three parallax depth layers for the side card (back → front).
+const SIDE_ART = {
+  bg: "/sideCard/background.svg",
+  mid: "/sideCard/midground.svg",
+  fg: "/sideCard/foreground.svg",
+};
 
 // ── Side-card size ── breadth in vmax; height is breadth × SIDE_ASPECT so the aspect
 // ratio is LOCKED. That is the key fix: the clip polygon was designed on a ~square, so
@@ -262,17 +267,18 @@ export default function About() {
       // (The whole card's cursor "repel" tilt is driven in the transform ticker via
       // tgtRotX/tgtRotY — no x/y translation, only a Z-axis lean.)
 
-      // ── Side card — parallax rig (foreground moves more → depth) ─────────────
-      const sfg = sideEl?.querySelector(".hc-fg-img") as HTMLElement | null;
-      const sbg = sideEl?.querySelector(".hc-bg-img") as HTMLElement | null;
-      if (sfg) gsap.set(sfg, { scale: IMG_COVER });
-      if (sbg) gsap.set(sbg, { scale: IMG_COVER });
+      // ── Side card — 3-layer parallax rig (bg < mid < fg depth) ───────────────
+      const sbg = sideEl?.querySelector(".hs-bg") as HTMLElement | null;
+      const smid = sideEl?.querySelector(".hs-mid") as HTMLElement | null;
+      const sfg = sideEl?.querySelector(".hs-fg") as HTMLElement | null;
       const side = {
         el: sideEl,
+        bgX: sbg ? gsap.quickTo(sbg, "x", { duration: 0.7, ease: "power3.out" }) : null,
+        bgY: sbg ? gsap.quickTo(sbg, "y", { duration: 0.7, ease: "power3.out" }) : null,
+        midX: smid ? gsap.quickTo(smid, "x", { duration: 0.6, ease: "power3.out" }) : null,
+        midY: smid ? gsap.quickTo(smid, "y", { duration: 0.6, ease: "power3.out" }) : null,
         fgX: sfg ? gsap.quickTo(sfg, "x", { duration: 0.5, ease: "power3.out" }) : null,
         fgY: sfg ? gsap.quickTo(sfg, "y", { duration: 0.5, ease: "power3.out" }) : null,
-        bgX: sbg ? gsap.quickTo(sbg, "x", { duration: 0.6, ease: "power3.out" }) : null,
-        bgY: sbg ? gsap.quickTo(sbg, "y", { duration: 0.6, ease: "power3.out" }) : null,
         curX: cCenterX, curY: cCenterY, tX: cCenterX, tY: cCenterY,
         curS: SIDE_START, tS: SIDE_START,   // starts visible (not zero), grows, then settles
       };
@@ -300,12 +306,13 @@ export default function About() {
         // Repel in Z (docked only): the side nearest the cursor tips AWAY. Cursor to
         // the right → right edge recedes (+rotateY); cursor low → bottom recedes.
         if (inDock) { tgtRotY = dx * CURSOR_TILT; tgtRotX = -dy * CURSOR_TILT; }
-        // Side card parallaxes against its own tracked centre + real size.
+        // Side card — 3-layer parallax against its own tracked centre + real size.
         if (side.el) {
           const sdx = gsap.utils.clamp(-0.5, 0.5, (ev.clientX - side.curX) / (sW || 1));
           const sdy = gsap.utils.clamp(-0.5, 0.5, (ev.clientY - side.curY) / (sH || 1));
-          side.fgX?.(-sdx * 22); side.fgY?.(-sdy * 12);
-          side.bgX?.(-sdx * 11); side.bgY?.(-sdy * 6);
+          side.fgX?.(-sdx * 20); side.fgY?.(-sdy * 11);   // foreground moves most
+          side.midX?.(-sdx * 12); side.midY?.(-sdy * 7);  // midground
+          side.bgX?.(-sdx * 6);  side.bgY?.(-sdy * 3);    // background least
         }
       };
       window.addEventListener("mousemove", onMove);
@@ -576,6 +583,26 @@ export default function About() {
         .hc-fg-img { z-index: 1; }
         .hc-card-content { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
 
+        /* ── Side card: 3 parallax depth layers ───────────────────────────────
+           cover-fit so the wide (3:1) panorama fills the portrait card with minimal
+           crop; the -8% inset gives headroom so the parallax translate never bares an
+           edge. Foreground sits on top and moves most → depth. */
+        .hs-layers { position: absolute; inset: 0; }
+        .hs-img {
+          position: absolute;
+          inset: -8%;
+          width: 116%;
+          height: 116%;
+          object-fit: cover;
+          display: block;
+          transform-origin: center center;
+          will-change: transform;
+          backface-visibility: hidden;
+        }
+        .hs-bg  { z-index: 1; }
+        .hs-mid { z-index: 2; }
+        .hs-fg  { z-index: 3; }
+
         /* Padded to sit INSIDE the grid frame: left clears the vertical line
            (matches GridFrame's --gf-col), right clears the border (--gf-inset). */
         .ab-grid { margin: 0; padding: clamp(5rem, 13vh, 12rem) calc(clamp(14px, 1.5vw, 26px) + 2rem) clamp(5rem, 13vh, 12rem) calc(clamp(78px, 7vw, 116px) + 2rem); display: grid; grid-template-columns: auto 1fr; gap: clamp(2rem, 6vw, 6rem); align-items: start; }
@@ -609,11 +636,13 @@ export default function About() {
             rectangle with parallax images (shared for now; swap src for its own). */}
         <div className="hc-side" aria-hidden="true">
           <div className="hc-clip">
-            <div className="hc-layers">
+            <div className="hs-layers">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img className="hc-bg-img" src={SIDE_ART.bg} alt="" />
+              <img className="hs-img hs-bg" src={SIDE_ART.bg} alt="" />
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img className="hc-fg-img" src={SIDE_ART.fg} alt="" />
+              <img className="hs-img hs-mid" src={SIDE_ART.mid} alt="" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img className="hs-img hs-fg" src={SIDE_ART.fg} alt="" />
             </div>
           </div>
         </div>
